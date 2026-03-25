@@ -64,8 +64,11 @@
     <Compile Include="Assets\Scripts\UI\InventorySlotVisual.cs" />
     <Compile Include="Assets\Scripts\UI\InventorySlotData.cs" />
     <Compile Include="Assets\Scripts\Player\IsoPlayerController2D.cs" />
+    <Compile Include="Assets\Scripts\Items\ItemPickup.cs" />
     <Compile Include="Assets\Scripts\UI\InventorySystem.cs" />
+    <Compile Include="Assets\Scripts\Items\ResourceNodeDropper.cs" />
     <Compile Include="Assets\Scripts\UI\InventoryUIController.cs" />
+    <Compile Include="Assets\Scripts\Items\DroppedItemVisual.cs" />
     <Compile Include="Assets\Scripts\UI\InventoryItemData.cs" />
     <Compile Include="Assets\Scripts\UI\InventoryDebugInput.cs" />
     <Compile Include="Assets\Scripts\UI\SimpleInventoryUI.cs" />

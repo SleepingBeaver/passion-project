@@ -3,28 +3,16 @@
   "WorkspaceRootPath": "D:\\Dev\\Unity\\PassionProject\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|d:\\dev\\unity\\passionproject\\assets\\scripts\\ui\\inventorydebuginput.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\ui\\inventorydebuginput.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|d:\\dev\\unity\\passionproject\\assets\\scripts\\items\\resourcenodedropper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\items\\resourcenodedropper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|d:\\dev\\unity\\passionproject\\assets\\scripts\\ui\\inventorysystem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\ui\\inventorysystem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|d:\\dev\\unity\\passionproject\\assets\\scripts\\items\\droppeditemvisual.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\items\\droppeditemvisual.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|D:\\Dev\\Unity\\PassionProject\\assets\\scripts\\ui\\inventoryuicontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\ui\\inventoryuicontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|D:\\Dev\\Unity\\PassionProject\\assets\\scripts\\ui\\inventoryslotvisual.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\ui\\inventoryslotvisual.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|D:\\Dev\\Unity\\PassionProject\\assets\\scripts\\ui\\inventoryslotdata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\ui\\inventoryslotdata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|D:\\Dev\\Unity\\PassionProject\\assets\\scripts\\ui\\inventoryitemdata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\ui\\inventoryitemdata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|D:\\Dev\\Unity\\PassionProject\\assets\\scripts\\items\\itempickup.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\items\\itempickup.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -39,76 +27,40 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "InventoryDebugInput.cs",
-              "DocumentMoniker": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\UI\\InventoryDebugInput.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\UI\\InventoryDebugInput.cs",
-              "ToolTip": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\UI\\InventoryDebugInput.cs",
-              "RelativeToolTip": "Assets\\Scripts\\UI\\InventoryDebugInput.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAAeAAAAAAAAAA==",
+              "Title": "ResourceNodeDropper.cs",
+              "DocumentMoniker": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\Items\\ResourceNodeDropper.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Items\\ResourceNodeDropper.cs",
+              "ToolTip": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\Items\\ResourceNodeDropper.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Items\\ResourceNodeDropper.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADUAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-24T16:24:53.261Z",
+              "WhenOpened": "2026-03-25T14:13:52.305Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "InventorySystem.cs",
-              "DocumentMoniker": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\UI\\InventorySystem.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\UI\\InventorySystem.cs",
-              "ToolTip": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\UI\\InventorySystem.cs",
-              "RelativeToolTip": "Assets\\Scripts\\UI\\InventorySystem.cs",
-              "ViewState": "AgIAAE4AAAAAAAAAAAAqwHgAAAABAAAAAAAAAA==",
+              "Title": "DroppedItemVisual.cs",
+              "DocumentMoniker": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\Items\\DroppedItemVisual.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Items\\DroppedItemVisual.cs",
+              "ToolTip": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\Items\\DroppedItemVisual.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Items\\DroppedItemVisual.cs",
+              "ViewState": "AgIAALYAAAAAAAAAAAAqwOAAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-24T16:22:31.764Z",
+              "WhenOpened": "2026-03-25T14:07:18.884Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "InventoryUIController.cs",
-              "DocumentMoniker": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\UI\\InventoryUIController.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\UI\\InventoryUIController.cs",
-              "ToolTip": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\UI\\InventoryUIController.cs",
-              "RelativeToolTip": "Assets\\Scripts\\UI\\InventoryUIController.cs",
-              "ViewState": "AgIAABIAAAAAAAAAAAAqwDwAAAABAAAAAAAAAA==",
+              "Title": "ItemPickup.cs",
+              "DocumentMoniker": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\Items\\ItemPickup.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Items\\ItemPickup.cs",
+              "ToolTip": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\Items\\ItemPickup.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Items\\ItemPickup.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADMAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-24T16:20:27.172Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "InventorySlotVisual.cs",
-              "DocumentMoniker": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\UI\\InventorySlotVisual.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\UI\\InventorySlotVisual.cs",
-              "ToolTip": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\UI\\InventorySlotVisual.cs",
-              "RelativeToolTip": "Assets\\Scripts\\UI\\InventorySlotVisual.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACwAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-24T16:19:06.427Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "InventorySlotData.cs",
-              "DocumentMoniker": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\UI\\InventorySlotData.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\UI\\InventorySlotData.cs",
-              "ToolTip": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\UI\\InventorySlotData.cs",
-              "RelativeToolTip": "Assets\\Scripts\\UI\\InventorySlotData.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-24T16:15:53.306Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "InventoryItemData.cs",
-              "DocumentMoniker": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\UI\\InventoryItemData.cs",
-              "RelativeDocumentMoniker": "Assets\\Scripts\\UI\\InventoryItemData.cs",
-              "ToolTip": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\UI\\InventoryItemData.cs",
-              "RelativeToolTip": "Assets\\Scripts\\UI\\InventoryItemData.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAlAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-24T16:13:14.654Z"
+              "WhenOpened": "2026-03-25T13:20:40.127Z"
             }
           ]
         }

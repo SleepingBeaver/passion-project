@@ -28,7 +28,7 @@ public class InventoryDebugInput : MonoBehaviour
 
             Debug.Log(removed
                 ? $"Removido: {removeAmountPerPress}x {woodItem.itemName}. Total: {inventorySystem.CountItem(woodItem)}"
-                : $"Não havia quantidade suficiente para remover. Total atual: {inventorySystem.CountItem(woodItem)}");
+                : $"Não ha quantidade suficiente para remover. Total atual: {inventorySystem.CountItem(woodItem)}");
         }
     }
 }
