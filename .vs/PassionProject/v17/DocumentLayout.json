@@ -3,7 +3,11 @@
   "WorkspaceRootPath": "D:\\Dev\\Unity\\PassionProject\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|D:\\Dev\\Unity\\PassionProject\\assets\\scripts\\ui\\uiinventorybar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|d:\\dev\\unity\\passionproject\\assets\\scripts\\ui\\presentationlayoutcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\ui\\presentationlayoutcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|d:\\dev\\unity\\passionproject\\assets\\scripts\\ui\\uiinventorybar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\ui\\uiinventorybar.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
@@ -11,7 +15,7 @@
       "RelativeMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\ui\\itemdata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|d:\\dev\\unity\\passionproject\\assets\\scripts\\ui\\inventoryitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|D:\\Dev\\Unity\\PassionProject\\assets\\scripts\\ui\\inventoryitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{9EA5DB45-49B0-C9E8-9BF5-BB4C8F1BB058}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\ui\\inventoryitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
@@ -22,11 +26,24 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
+              "Title": "PresentationLayoutController.cs",
+              "DocumentMoniker": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\UI\\PresentationLayoutController.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\UI\\PresentationLayoutController.cs",
+              "ToolTip": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\UI\\PresentationLayoutController.cs",
+              "RelativeToolTip": "Assets\\Scripts\\UI\\PresentationLayoutController.cs",
+              "ViewState": "AgIAAOQAAAAAAAAAAAAgwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-13T22:11:42.553Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "InventoryItem.cs",
               "DocumentMoniker": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\UI\\InventoryItem.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\UI\\InventoryItem.cs",
@@ -34,12 +51,11 @@
               "RelativeToolTip": "Assets\\Scripts\\UI\\InventoryItem.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-11T00:53:42.216Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-11T00:53:42.216Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "ItemData.cs",
               "DocumentMoniker": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\UI\\ItemData.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\UI\\ItemData.cs",
@@ -47,12 +63,11 @@
               "RelativeToolTip": "Assets\\Scripts\\UI\\ItemData.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAgAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-11T00:47:05.193Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-11T00:47:05.193Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "UIInventoryBar.cs",
               "DocumentMoniker": "D:\\Dev\\Unity\\PassionProject\\Assets\\Scripts\\UI\\UIInventoryBar.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\UI\\UIInventoryBar.cs",
