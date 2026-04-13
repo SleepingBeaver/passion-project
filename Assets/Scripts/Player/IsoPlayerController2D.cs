@@ -3,33 +3,30 @@ using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(PlayerInput))]
-public class TopDown8DirController : MonoBehaviour
+public class IsoPlayerController2D : MonoBehaviour
 {
-    // Movimento
+    // Configuracao de movimento isometrico.
     [Header("Movement")]
     [SerializeField] private float walkSpeed = 5f;
     [SerializeField] private float sprintSpeed = 8f;
     [SerializeField] private float deadzone = 0.15f;
-
     [SerializeField] private bool alignToIsoTiles = true;
     [SerializeField] private float isoYScale = 0.5f;
 
-    // Animação
     [Header("Animation")]
     [SerializeField] private Animator animator;
 
-    // Correção do Idle Diagonal
     [Header("Idle Diagonal Fix")]
     [SerializeField] private float diagonalToCardinalCommitTime = 0.08f;
 
-    // Interno
+    // Referencias e cache usados em runtime.
     private Rigidbody2D rb;
     private PlayerInput playerInput;
     private InputAction sprintAction;
 
     private Vector2 inputRaw;
     private Vector2 animDir;
-    private Vector2 moveDir;    // normalizado
+    private Vector2 moveDir;
     private Vector2 lastDir = Vector2.down;
 
     private Vector2 pendingCardinal;
@@ -37,8 +34,17 @@ public class TopDown8DirController : MonoBehaviour
 
     private bool sprintHeld;
     private bool isMoving;
+    private bool hasIsSprintingParam;
+    private bool hasCachedSprintValue;
 
-    // Animator hashes
+    // Hashes de animacao para evitar buscas por string a cada frame.
+    private float cachedMoveX = float.NaN;
+    private float cachedMoveY = float.NaN;
+    private float cachedSpeed = float.NaN;
+    private float cachedLastMoveX = float.NaN;
+    private float cachedLastMoveY = float.NaN;
+    private bool cachedSprintValue;
+
     private static readonly int MoveXHash = Animator.StringToHash("MoveX");
     private static readonly int MoveYHash = Animator.StringToHash("MoveY");
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
@@ -46,8 +52,7 @@ public class TopDown8DirController : MonoBehaviour
     private static readonly int LastMoveYHash = Animator.StringToHash("LastMoveY");
     private static readonly int IsSprintingHash = Animator.StringToHash("IsSprinting");
 
-    private bool hasIsSprintingParam;
-
+    // Ciclo de vida.
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -55,39 +60,40 @@ public class TopDown8DirController : MonoBehaviour
         rb.freezeRotation = true;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
 
-        if (!animator) animator = GetComponentInChildren<Animator>();
+        if (animator == null)
+            animator = GetComponentInChildren<Animator>();
 
         playerInput = GetComponent<PlayerInput>();
         if (playerInput != null && playerInput.actions != null)
             sprintAction = playerInput.actions.FindAction("Sprint", true);
 
-        // Detecta se o parâmetro existe (evita warning)
         hasIsSprintingParam = HasBoolParam(animator, IsSprintingHash);
 
-        // Direção inicial do idle
-        animator.SetFloat(LastMoveXHash, 0f);
-        animator.SetFloat(LastMoveYHash, -1f);
+        if (animator != null)
+        {
+            SetAnimatorFloatIfChanged(LastMoveXHash, 0f, ref cachedLastMoveX);
+            SetAnimatorFloatIfChanged(LastMoveYHash, -1f, ref cachedLastMoveY);
 
-        if (hasIsSprintingParam)
-            animator.SetBool(IsSprintingHash, false);
+            if (hasIsSprintingParam)
+                SetAnimatorBoolIfChanged(IsSprintingHash, false);
+        }
     }
 
-    // Input (Send Messages)
+    // Leitura de input vinda do Input System.
     public void OnMove(InputValue value)
     {
         inputRaw = value.Get<Vector2>();
     }
 
+    // Atualizacao de input, direcao e animacao.
     private void Update()
     {
-        // Sprint “segurar e soltar” (robusto)
         sprintHeld = sprintAction != null && sprintAction.IsPressed();
 
-        // Leitura / deadzone
         Vector2 v = inputRaw;
-        if (v.sqrMagnitude < deadzone * deadzone) v = Vector2.zero;
+        if (v.sqrMagnitude < deadzone * deadzone)
+            v = Vector2.zero;
 
-        // Direção discreta (animação)
         animDir = new Vector2(
             Mathf.Approximately(v.x, 0f) ? 0f : Mathf.Sign(v.x),
             Mathf.Approximately(v.y, 0f) ? 0f : Mathf.Sign(v.y)
@@ -95,35 +101,36 @@ public class TopDown8DirController : MonoBehaviour
 
         isMoving = animDir != Vector2.zero;
 
-        // Direção real de movimento (velocidade constante)
         Vector2 moveBase = animDir;
-
         if (alignToIsoTiles && isMoving)
             moveBase = new Vector2(animDir.x, animDir.y * isoYScale);
 
         moveDir = isMoving ? moveBase.normalized : Vector2.zero;
 
-        // Animator (walk)
-        animator.SetFloat(MoveXHash, animDir.x);
-        animator.SetFloat(MoveYHash, animDir.y);
-        animator.SetFloat(SpeedHash, isMoving ? 1f : 0f);
+        if (animator != null)
+        {
+            SetAnimatorFloatIfChanged(MoveXHash, animDir.x, ref cachedMoveX);
+            SetAnimatorFloatIfChanged(MoveYHash, animDir.y, ref cachedMoveY);
+            SetAnimatorFloatIfChanged(SpeedHash, isMoving ? 1f : 0f, ref cachedSpeed);
 
-        if (hasIsSprintingParam)
-            animator.SetBool(IsSprintingHash, sprintHeld && isMoving);
+            if (hasIsSprintingParam)
+                SetAnimatorBoolIfChanged(IsSprintingHash, sprintHeld && isMoving);
+        }
 
-        // Correção do Idle diagonal
         UpdateLastMove();
     }
 
+    // Aplicacao final do deslocamento no Rigidbody.
     private void FixedUpdate()
     {
-        if (!isMoving) return;
+        if (!isMoving)
+            return;
 
         float speed = sprintHeld ? sprintSpeed : walkSpeed;
         rb.MovePosition(rb.position + moveDir * speed * Time.fixedDeltaTime);
     }
 
-    // LastMove (idle)
+    // Regras para manter a direcao de idle mais natural nas diagonais.
     private void UpdateLastMove()
     {
         if (!isMoving)
@@ -137,35 +144,38 @@ public class TopDown8DirController : MonoBehaviour
             lastDir = animDir;
             ClearPending();
         }
-        else
+        else if (IsDiagonal(lastDir))
         {
-            if (IsDiagonal(lastDir))
+            if (animDir != pendingCardinal)
             {
-                if (animDir != pendingCardinal)
-                {
-                    pendingCardinal = animDir;
-                    pendingSince = Time.time;
-                }
-
-                if (Time.time - pendingSince >= diagonalToCardinalCommitTime)
-                {
-                    lastDir = pendingCardinal;
-                    ClearPending();
-                }
+                pendingCardinal = animDir;
+                pendingSince = Time.time;
             }
-            else
+
+            if (Time.time - pendingSince >= diagonalToCardinalCommitTime)
             {
-                lastDir = animDir;
+                lastDir = pendingCardinal;
                 ClearPending();
             }
         }
+        else
+        {
+            lastDir = animDir;
+            ClearPending();
+        }
 
-        animator.SetFloat(LastMoveXHash, lastDir.x);
-        animator.SetFloat(LastMoveYHash, lastDir.y);
+        if (animator != null)
+        {
+            SetAnimatorFloatIfChanged(LastMoveXHash, lastDir.x, ref cachedLastMoveX);
+            SetAnimatorFloatIfChanged(LastMoveYHash, lastDir.y, ref cachedLastMoveY);
+        }
     }
 
+    // Utilitarios de direcao e animator.
     private static bool IsDiagonal(Vector2 dir)
-        => Mathf.Abs(dir.x) > 0.5f && Mathf.Abs(dir.y) > 0.5f;
+    {
+        return Mathf.Abs(dir.x) > 0.5f && Mathf.Abs(dir.y) > 0.5f;
+    }
 
     private void ClearPending()
     {
@@ -173,15 +183,36 @@ public class TopDown8DirController : MonoBehaviour
         pendingSince = 0f;
     }
 
-    private static bool HasBoolParam(Animator a, int nameHash)
+    private static bool HasBoolParam(Animator targetAnimator, int nameHash)
     {
-        if (a == null) return false;
+        if (targetAnimator == null)
+            return false;
 
-        foreach (var p in a.parameters)
+        foreach (AnimatorControllerParameter parameter in targetAnimator.parameters)
         {
-            if (p.nameHash == nameHash && p.type == AnimatorControllerParameterType.Bool)
+            if (parameter.nameHash == nameHash && parameter.type == AnimatorControllerParameterType.Bool)
                 return true;
         }
+
         return false;
+    }
+
+    private void SetAnimatorFloatIfChanged(int hash, float value, ref float cachedValue)
+    {
+        if (Mathf.Approximately(cachedValue, value))
+            return;
+
+        animator.SetFloat(hash, value);
+        cachedValue = value;
+    }
+
+    private void SetAnimatorBoolIfChanged(int hash, bool value)
+    {
+        if (hasCachedSprintValue && cachedSprintValue == value)
+            return;
+
+        animator.SetBool(hash, value);
+        cachedSprintValue = value;
+        hasCachedSprintValue = true;
     }
 }

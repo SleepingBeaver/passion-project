@@ -2,6 +2,9 @@ using UnityEngine;
 
 public class DroppedItemVisual : MonoBehaviour
 {
+    // Constantes e estados usados pelo drop no mundo.
+    private const float PickupTargetResolveRetryInterval = 0.25f;
+
     private enum DropState
     {
         Scatter,
@@ -9,6 +12,7 @@ public class DroppedItemVisual : MonoBehaviour
         Magnetized
     }
 
+    // Configuracao visual e de magnetismo.
     [Header("Visual")]
     [SerializeField] private Transform visualRoot;
     [SerializeField] private SpriteRenderer iconRenderer;
@@ -30,7 +34,13 @@ public class DroppedItemVisual : MonoBehaviour
     [SerializeField] private Transform pickupTargetOverride;
     [SerializeField] private string playerTag = "Player";
 
-    private InventoryItemData itemData;
+    // Cache compartilhado para evitar buscas repetidas pelo alvo de coleta.
+    private static InventorySystem cachedSharedInventorySystem;
+    private static Transform cachedSharedPickupTarget;
+    private static string cachedSharedPickupTag;
+
+    // Estado interno do item dropado.
+    private ItemData itemData;
     private int amount;
 
     private Transform pickupTarget;
@@ -40,24 +50,43 @@ public class DroppedItemVisual : MonoBehaviour
     private float scatterTimer;
     private float currentMagnetSpeed;
     private float magnetUnlockTime;
+    private float nextPickupResolveTime;
+    private float magnetRadiusSqr;
+    private float collectDistanceSqr;
 
     private DropState state;
     private bool isInitialized;
 
+    // Ciclo de vida.
     private void Awake()
     {
+        CacheDistanceThresholds();
+
         if (inventorySystem == null)
-            inventorySystem = FindFirstObjectByType<InventorySystem>();
+            inventorySystem = cachedSharedInventorySystem != null
+                ? cachedSharedInventorySystem
+                : FindFirstObjectByType<InventorySystem>();
+
+        if (inventorySystem != null)
+            cachedSharedInventorySystem = inventorySystem;
+    }
+
+    private void OnValidate()
+    {
+        CacheDistanceThresholds();
     }
 
     private void OnEnable()
     {
         if (visualRoot != null)
             visualRoot.localPosition = Vector3.zero;
+
+        nextPickupResolveTime = 0f;
     }
 
+    // Inicializacao externa do drop quando ele nasce no mundo.
     public void Initialize(
-        InventoryItemData newItemData,
+        ItemData newItemData,
         int newAmount,
         InventorySystem newInventorySystem = null,
         Transform newPickupTarget = null)
@@ -66,7 +95,10 @@ public class DroppedItemVisual : MonoBehaviour
         amount = Mathf.Max(1, newAmount);
 
         if (newInventorySystem != null)
+        {
             inventorySystem = newInventorySystem;
+            cachedSharedInventorySystem = newInventorySystem;
+        }
 
         if (newPickupTarget != null)
             pickupTargetOverride = newPickupTarget;
@@ -80,12 +112,13 @@ public class DroppedItemVisual : MonoBehaviour
         isInitialized = true;
     }
 
+    // Atualizacao do comportamento do drop.
     private void Update()
     {
         if (!isInitialized)
             return;
 
-        if (pickupTarget == null)
+        if (pickupTarget == null && Time.time >= nextPickupResolveTime)
             ResolvePickupTarget();
 
         switch (state)
@@ -104,6 +137,7 @@ public class DroppedItemVisual : MonoBehaviour
         }
     }
 
+    // Fluxo de dispersao inicial.
     private void BeginScatter()
     {
         scatterStart = transform.position;
@@ -145,6 +179,7 @@ public class DroppedItemVisual : MonoBehaviour
         }
     }
 
+    // Fluxo de espera e magnetismo.
     private void UpdateIdle()
     {
         if (pickupTarget == null)
@@ -153,9 +188,8 @@ public class DroppedItemVisual : MonoBehaviour
         if (Time.time < magnetUnlockTime)
             return;
 
-        float distanceToPlayer = Vector2.Distance(transform.position, pickupTarget.position);
-
-        if (distanceToPlayer <= magnetRadius)
+        Vector3 toTarget = pickupTarget.position - transform.position;
+        if (toTarget.sqrMagnitude <= magnetRadiusSqr)
             state = DropState.Magnetized;
     }
 
@@ -179,12 +213,12 @@ public class DroppedItemVisual : MonoBehaviour
             currentMagnetSpeed * Time.deltaTime
         );
 
-        float distanceToPlayer = Vector2.Distance(transform.position, pickupTarget.position);
-
-        if (distanceToPlayer <= collectDistance)
+        Vector3 toTarget = pickupTarget.position - transform.position;
+        if (toTarget.sqrMagnitude <= collectDistanceSqr)
             TryCollect();
     }
 
+    // Tentativa de coleta e integracao com o inventario.
     private void TryCollect()
     {
         if (itemData == null || inventorySystem == null)
@@ -207,11 +241,20 @@ public class DroppedItemVisual : MonoBehaviour
         }
     }
 
+    // Suporte interno para encontrar o alvo e recalcular distancias.
     private void ResolvePickupTarget()
     {
+        nextPickupResolveTime = Time.time + PickupTargetResolveRetryInterval;
+
         if (pickupTargetOverride != null)
         {
             pickupTarget = pickupTargetOverride;
+            return;
+        }
+
+        if (cachedSharedPickupTarget != null && cachedSharedPickupTag == playerTag)
+        {
+            pickupTarget = cachedSharedPickupTarget;
             return;
         }
 
@@ -221,5 +264,13 @@ public class DroppedItemVisual : MonoBehaviour
 
         Transform anchor = player.transform.Find("PickupTarget");
         pickupTarget = anchor != null ? anchor : player.transform;
+        cachedSharedPickupTarget = pickupTarget;
+        cachedSharedPickupTag = playerTag;
+    }
+
+    private void CacheDistanceThresholds()
+    {
+        magnetRadiusSqr = magnetRadius * magnetRadius;
+        collectDistanceSqr = collectDistance * collectDistance;
     }
 }

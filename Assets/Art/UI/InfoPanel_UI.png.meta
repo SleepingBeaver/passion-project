@@ -1,0 +1,478 @@
+fileFormatVersion: 2
+guid: 339148f15ac7b7e4aaf06fb8e01a630e
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 8944872623752186119
+    second: InfoPanel_UI_0
+  - first:
+      213: -1857093757740519103
+    second: InfoPanel_UI_1
+  - first:
+      213: 1861976671961746720
+    second: InfoPanel_UI_2
+  - first:
+      213: -1712357043718491350
+    second: InfoPanel_UI_3
+  - first:
+      213: -2050574920900645067
+    second: InfoPanel_UI_4
+  - first:
+      213: -9004262026451662141
+    second: InfoPanel_UI_5
+  - first:
+      213: 31001354242512823
+    second: InfoPanel_UI_6
+  - first:
+      213: -1881289032277506148
+    second: InfoPanel_UI_7
+  - first:
+      213: 1268076596966820244
+    second: InfoPanel_UI_8
+  - first:
+      213: -4028938815506336243
+    second: InfoPanel_UI_9
+  - first:
+      213: -6373174428595081735
+    second: InfoPanel_UI_10
+  - first:
+      213: 6978429131468824889
+    second: InfoPanel_UI_11
+  - first:
+      213: -6904289209225287507
+    second: InfoPanel_UI_12
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 32
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: InfoPanel_UI_WeekDay
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 49
+        width: 27
+        height: 15
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7098dd36242922c70800000000000000
+      internalID: 8944872623752186119
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InfoPanel_UI_Principal
+      rect:
+        serializedVersion: 2
+        x: 18
+        y: 64
+        width: 115
+        height: 56
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 141f74f01174a36e0800000000000000
+      internalID: -1857093757740519103
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InfoPanel_UI_Season
+      rect:
+        serializedVersion: 2
+        x: 28
+        y: 49
+        width: 44
+        height: 15
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 02d08500be117d910800000000000000
+      internalID: 1861976671961746720
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InfoPanel_UI_NumberDay
+      rect:
+        serializedVersion: 2
+        x: 72
+        y: 49
+        width: 21
+        height: 15
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a237588575c7c38e0800000000000000
+      internalID: -1712357043718491350
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InfoPanel_UI_HourSquare
+      rect:
+        serializedVersion: 2
+        x: 108
+        y: 49
+        width: 12
+        height: 15
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 53f646e49f4ea83e0800000000000000
+      internalID: -2050574920900645067
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InfoPanel_UI_MoneySquare
+      rect:
+        serializedVersion: 2
+        x: 120
+        y: 49
+        width: 11
+        height: 15
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3ca4fc0c46f6a0380800000000000000
+      internalID: -9004262026451662141
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InfoPanel_UI_MoneySymbol
+      rect:
+        serializedVersion: 2
+        x: 99
+        y: 50
+        width: 9
+        height: 13
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7b75e2341932e6000800000000000000
+      internalID: 31001354242512823
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InfoPanel_UI_CloudySymbol
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 25
+        width: 22
+        height: 23
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c97c247b79154e5e0800000000000000
+      internalID: -1881289032277506148
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InfoPanel_UI_PartialSymbol
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 2
+        width: 22
+        height: 23
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 499813642fc199110800000000000000
+      internalID: 1268076596966820244
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InfoPanel_UI_StormSymbol
+      rect:
+        serializedVersion: 2
+        x: 86
+        y: 25
+        width: 22
+        height: 23
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d0636f75e755618c0800000000000000
+      internalID: -4028938815506336243
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InfoPanel_UI_SunnySymbol
+      rect:
+        serializedVersion: 2
+        x: 86
+        y: 2
+        width: 22
+        height: 23
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9fdacfbaf9fed87a0800000000000000
+      internalID: -6373174428595081735
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InfoPanel_UI_RainSymbol
+      rect:
+        serializedVersion: 2
+        x: 108
+        y: 25
+        width: 22
+        height: 23
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 931ef6f525c58d060800000000000000
+      internalID: 6978429131468824889
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InfoPanel_UI_WindSymbol
+      rect:
+        serializedVersion: 2
+        x: 108
+        y: 2
+        width: 22
+        height: 23
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: da860917b890f20a0800000000000000
+      internalID: -6904289209225287507
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: InfoPanel_UI_HourDiv
+      rect:
+        serializedVersion: 2
+        x: 46
+        y: 25
+        width: 3
+        height: 8
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0b3ad33baae42a549978d9df4cdf965c
+      internalID: 1632305611
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: da547809419010a43b61a66964c8a067
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      InfoPanel_UI_CloudySymbol: -1881289032277506148
+      InfoPanel_UI_HourDiv: 1632305611
+      InfoPanel_UI_HourSquare: -2050574920900645067
+      InfoPanel_UI_MoneySquare: -9004262026451662141
+      InfoPanel_UI_MoneySymbol: 31001354242512823
+      InfoPanel_UI_NumberDay: -1712357043718491350
+      InfoPanel_UI_PartialSymbol: 1268076596966820244
+      InfoPanel_UI_Principal: -1857093757740519103
+      InfoPanel_UI_RainSymbol: 6978429131468824889
+      InfoPanel_UI_Season: 1861976671961746720
+      InfoPanel_UI_StormSymbol: -4028938815506336243
+      InfoPanel_UI_SunnySymbol: -6373174428595081735
+      InfoPanel_UI_WeekDay: 8944872623752186119
+      InfoPanel_UI_WindSymbol: -6904289209225287507
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

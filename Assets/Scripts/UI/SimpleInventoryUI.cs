@@ -1,17 +1,21 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class SimpleInventoryUI : MonoBehaviour
 {
+    // Referencias principais da janela de inventario.
     [Header("Root")]
     [SerializeField] private GameObject inventoryUIRoot;
 
+    // Configuracao do fundo escurecido.
     [Header("Background")]
     [SerializeField] private CanvasGroup dimBackgroundCanvasGroup;
     [SerializeField] private float backgroundFadeDuration = 0.18f;
     [SerializeField, Range(0f, 1f)] private float backgroundMaxAlpha = 0.45f;
 
+    // Configuracao visual do painel central.
     [Header("Panel")]
     [SerializeField] private CanvasGroup inventoryPanelCanvasGroup;
     [SerializeField] private RectTransform inventoryPanelRect;
@@ -19,9 +23,14 @@ public class SimpleInventoryUI : MonoBehaviour
     [SerializeField] private float panelStartScale = 0.92f;
     [SerializeField] private float panelEndScale = 1f;
 
+    // Referencias de jogo afetadas ao abrir o inventario.
     [Header("Player")]
     [SerializeField] private Behaviour playerMovementBehaviour;
 
+    [Header("HUD")]
+    [SerializeField] private GameObject[] hudObjectsToHideWhenOpen;
+
+    // Feedback sonoro da interface.
     [Header("Audio")]
     [SerializeField] private AudioSource uiAudioSource;
     [SerializeField] private AudioClip openClip;
@@ -29,9 +38,15 @@ public class SimpleInventoryUI : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float openVolume = 1f;
     [SerializeField, Range(0f, 1f)] private float closeVolume = 1f;
 
+    // Estado interno da janela.
     private bool isOpen;
     private bool isTransitioning;
+    private bool isGamePausedByInventory;
+    private float previousTimeScale = 1f;
+    private Keyboard keyboard;
+    private readonly List<HudVisibilityState> hudVisibilityStates = new();
 
+    // Ciclo de vida.
     private void Start()
     {
         if (!ValidateReferences())
@@ -40,16 +55,19 @@ public class SimpleInventoryUI : MonoBehaviour
             return;
         }
 
+        keyboard = Keyboard.current;
         SetClosedStateImmediate();
     }
 
     private void Update()
     {
-        if (Keyboard.current == null || isTransitioning)
+        keyboard ??= Keyboard.current;
+
+        if (keyboard == null || isTransitioning)
             return;
 
-        bool tabPressed = Keyboard.current.tabKey.wasPressedThisFrame;
-        bool escapePressed = Keyboard.current.escapeKey.wasPressedThisFrame;
+        bool tabPressed = keyboard.tabKey.wasPressedThisFrame;
+        bool escapePressed = keyboard.escapeKey.wasPressedThisFrame;
 
         if (!isOpen && tabPressed)
         {
@@ -61,23 +79,29 @@ public class SimpleInventoryUI : MonoBehaviour
         }
     }
 
+    private void OnDisable()
+    {
+        SetGamePaused(false);
+    }
+
+    // Validacao inicial antes de liberar a janela.
     private bool ValidateReferences()
     {
         if (inventoryUIRoot == null)
         {
-            Debug.LogWarning("InventoryUIRoot não foi atribuído no Inspector.");
+            Debug.LogWarning("InventoryUIRoot nao foi atribuido no Inspector.");
             return false;
         }
 
         if (dimBackgroundCanvasGroup == null)
         {
-            Debug.LogWarning("DimBackground CanvasGroup não foi atribuído.");
+            Debug.LogWarning("DimBackground CanvasGroup nao foi atribuido.");
             return false;
         }
 
         if (inventoryPanelCanvasGroup == null)
         {
-            Debug.LogWarning("InventoryPanel CanvasGroup não foi atribuído.");
+            Debug.LogWarning("InventoryPanel CanvasGroup nao foi atribuido.");
             return false;
         }
 
@@ -88,13 +112,14 @@ public class SimpleInventoryUI : MonoBehaviour
 
         if (inventoryPanelRect == null)
         {
-            Debug.LogWarning("InventoryPanel RectTransform não foi encontrado.");
+            Debug.LogWarning("InventoryPanel RectTransform nao foi encontrado.");
             return false;
         }
 
         return true;
     }
 
+    // Sequencia de abertura do inventario.
     private IEnumerator OpenInventoryRoutine()
     {
         isTransitioning = true;
@@ -102,6 +127,8 @@ public class SimpleInventoryUI : MonoBehaviour
 
         inventoryUIRoot.SetActive(true);
         SetPlayerMovementEnabled(false);
+        SetHudObjectsVisible(false);
+        SetGamePaused(true);
         PlayUIClip(openClip, openVolume);
 
         dimBackgroundCanvasGroup.alpha = 0f;
@@ -143,6 +170,7 @@ public class SimpleInventoryUI : MonoBehaviour
         isTransitioning = false;
     }
 
+    // Sequencia de fechamento do inventario.
     private IEnumerator CloseInventoryRoutine()
     {
         isTransitioning = true;
@@ -176,6 +204,7 @@ public class SimpleInventoryUI : MonoBehaviour
         isTransitioning = false;
     }
 
+    // Restauracao imediata do estado fechado.
     private void SetClosedStateImmediate()
     {
         dimBackgroundCanvasGroup.alpha = 0f;
@@ -191,8 +220,11 @@ public class SimpleInventoryUI : MonoBehaviour
 
         isOpen = false;
         SetPlayerMovementEnabled(true);
+        SetHudObjectsVisible(true);
+        SetGamePaused(false);
     }
 
+    // Controle do jogador e feedback.
     private void SetPlayerMovementEnabled(bool value)
     {
         if (playerMovementBehaviour != null)
@@ -207,6 +239,7 @@ public class SimpleInventoryUI : MonoBehaviour
         uiAudioSource.PlayOneShot(clip, volume);
     }
 
+    // Curvas de animacao usadas nas transicoes.
     private float EaseOutBack(float t)
     {
         float c1 = 1.70158f;
@@ -219,5 +252,81 @@ public class SimpleInventoryUI : MonoBehaviour
         float c1 = 1.70158f;
         float c3 = c1 + 1f;
         return c3 * t * t * t - c1 * t * t;
+    }
+
+    // Controle do HUD e da pausa geral.
+    private void SetHudObjectsVisible(bool value)
+    {
+        if (value)
+        {
+            for (int i = 0; i < hudVisibilityStates.Count; i++)
+            {
+                HudVisibilityState state = hudVisibilityStates[i];
+                if (state.target != null)
+                    state.target.SetActive(state.wasActive);
+            }
+
+            hudVisibilityStates.Clear();
+            return;
+        }
+
+        hudVisibilityStates.Clear();
+
+        if (hudObjectsToHideWhenOpen == null)
+            return;
+
+        for (int i = 0; i < hudObjectsToHideWhenOpen.Length; i++)
+        {
+            GameObject hudObject = hudObjectsToHideWhenOpen[i];
+            if (hudObject == null || ContainsHudState(hudObject))
+                continue;
+
+            hudVisibilityStates.Add(new HudVisibilityState(hudObject, hudObject.activeSelf));
+            hudObject.SetActive(false);
+        }
+    }
+
+    private bool ContainsHudState(GameObject target)
+    {
+        for (int i = 0; i < hudVisibilityStates.Count; i++)
+        {
+            if (hudVisibilityStates[i].target == target)
+                return true;
+        }
+
+        return false;
+    }
+
+    private void SetGamePaused(bool value)
+    {
+        if (value)
+        {
+            if (isGamePausedByInventory)
+                return;
+
+            previousTimeScale = Time.timeScale;
+            Time.timeScale = 0f;
+            isGamePausedByInventory = true;
+            return;
+        }
+
+        if (!isGamePausedByInventory)
+            return;
+
+        Time.timeScale = previousTimeScale;
+        isGamePausedByInventory = false;
+    }
+
+    // Estrutura interna para lembrar o estado original da HUD.
+    private readonly struct HudVisibilityState
+    {
+        public HudVisibilityState(GameObject target, bool wasActive)
+        {
+            this.target = target;
+            this.wasActive = wasActive;
+        }
+
+        public GameObject target { get; }
+        public bool wasActive { get; }
     }
 }

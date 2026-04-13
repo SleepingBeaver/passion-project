@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::InventoryItemData
   itemId: wood
   itemName: Wood
-  icon: {fileID: 0}
-  maxStack: 5
+  icon: {fileID: -6521005003085703696, guid: 52aee3ca50b67ef4aba65ddb312e120b, type: 3}
+  maxStack: 3

@@ -3,12 +3,15 @@ using System;
 [Serializable]
 public class InventorySlotData
 {
-    public InventoryItemData item;
+    // Dados armazenados dentro de um slot do inventario.
+    public ItemData item;
     public int amount;
 
+    // Leitura rapida do estado do slot.
     public bool IsEmpty => item == null || amount <= 0;
 
-    public void SetItem(InventoryItemData newItem, int newAmount)
+    // Mutacoes basicas do slot.
+    public void SetItem(ItemData newItem, int newAmount)
     {
         item = newItem;
         amount = newAmount;
