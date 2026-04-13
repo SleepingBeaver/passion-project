@@ -1,4 +1,6 @@
-ADICIONADO COLETAVEIS  
-- Itens no chão são coletados automaticamente
-- Scripts para otimização dessa função estão quase prontos (Falta refinar)
-- Diferenciação entre itens coletados por interação ou automaticamente ainda em desenvolvimento
+SISTEMA MELHORADO
+- HUD Funcional e integrado
+- Barra de inventario integrada ao inventario geral
+- Sistema de Seleção
+- Informações mundiais adicionadas
+- Sistema de tempo, data, dinheiro e clima funcionais
