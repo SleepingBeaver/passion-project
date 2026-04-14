@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 097ce93dd0f524743b03c0985485af91, type: 3}
+  m_Name: CrateItem
+  m_EditorClassIdentifier: Assembly-CSharp::ItemData
+  itemId: crate
+  itemName: Caixote
+  icon: {fileID: -1362058913294850930, guid: 6d730cb6ad7893b45b8d6c3033a595b7, type: 3}
+  maxStack: 20
+  isUnique: 0
+  inventoryIconScale: 1.12

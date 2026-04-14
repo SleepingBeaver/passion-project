@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 097ce93dd0f524743b03c0985485af91, type: 3}
+  m_Name: WateringTool
+  m_EditorClassIdentifier: Assembly-CSharp::ItemData
+  itemId: watering_tool
+  itemName: Regador
+  icon: {fileID: 2876650075580173118, guid: 611f44fc48505a84ba6ee16f9fdb4fc3, type: 3}
+  maxStack: 1
+  isUnique: 1
+  inventoryIconScale: 1.28

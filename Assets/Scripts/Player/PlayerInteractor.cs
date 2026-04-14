@@ -43,6 +43,16 @@ public class PlayerInteractor : MonoBehaviour
         HidePromptImmediate();
     }
 
+    private void OnDisable()
+    {
+        if (currentInteractable != null)
+            currentInteractable.OnFocusExit(this);
+
+        currentInteractable = null;
+        CancelHold();
+        HidePromptImmediate();
+    }
+
     private void Update()
     {
         keyboard ??= Keyboard.current;
@@ -99,25 +109,38 @@ public class PlayerInteractor : MonoBehaviour
     // Fluxo de escolha e execucao da interacao atual.
     private void UpdateCurrentInteractable()
     {
-        WorldInteractable best = null;
-        float bestDistanceSqr = float.MaxValue;
+        WorldInteractable bestAvailable = null;
+        WorldInteractable bestFallback = null;
+        float bestAvailableDistanceSqr = float.MaxValue;
+        float bestFallbackDistanceSqr = float.MaxValue;
         Vector3 origin = ActorTransform.position;
 
         for (int i = 0; i < nearbyInteractables.Count; i++)
         {
             WorldInteractable candidate = nearbyInteractables[i];
 
-            if (candidate == null || !candidate.CanInteract(this))
+            if (candidate == null || !candidate.CanFocus(this))
                 continue;
 
             float distanceSqr = (candidate.transform.position - origin).sqrMagnitude;
+            bool canInteract = candidate.CanInteract(this);
 
-            if (distanceSqr < bestDistanceSqr)
+            if (canInteract)
             {
-                bestDistanceSqr = distanceSqr;
-                best = candidate;
+                if (distanceSqr < bestAvailableDistanceSqr)
+                {
+                    bestAvailableDistanceSqr = distanceSqr;
+                    bestAvailable = candidate;
+                }
+            }
+            else if (bestAvailable == null && distanceSqr < bestFallbackDistanceSqr)
+            {
+                bestFallbackDistanceSqr = distanceSqr;
+                bestFallback = candidate;
             }
         }
+
+        WorldInteractable best = bestAvailable != null ? bestAvailable : bestFallback;
 
         if (best == currentInteractable)
             return;
@@ -137,7 +160,18 @@ public class PlayerInteractor : MonoBehaviour
         if (keyboard == null || currentInteractable == null)
             return;
 
-        if (currentInteractable.RequiresHold)
+        if (!currentInteractable.CanInteract(this))
+        {
+            if (holdInProgress)
+            {
+                currentInteractable.OnHoldCanceled(this);
+                CancelHold();
+            }
+
+            return;
+        }
+
+        if (currentInteractable.GetRequiresHold(this))
         {
             HandleHoldInteraction();
         }
@@ -169,7 +203,7 @@ public class PlayerInteractor : MonoBehaviour
 
         holdTimer += Time.deltaTime;
 
-        if (holdTimer >= currentInteractable.HoldDuration)
+        if (holdTimer >= currentInteractable.GetHoldDuration(this))
         {
             currentInteractable.TryInteract(this);
             CancelHold();
@@ -187,7 +221,8 @@ public class PlayerInteractor : MonoBehaviour
     // Atualizacao visual do prompt e da barra de hold.
     private void UpdatePromptUI()
     {
-        bool show = currentInteractable != null;
+        bool canInteract = currentInteractable != null && currentInteractable.CanInteract(this);
+        bool show = currentInteractable != null && canInteract;
 
         SetPromptVisible(show);
 
@@ -198,12 +233,15 @@ public class PlayerInteractor : MonoBehaviour
             return;
         }
 
-        SetPromptText(currentInteractable.PromptText);
-        SetHoldIndicatorVisible(currentInteractable.RequiresHold);
+        bool requiresHold = canInteract && currentInteractable.GetRequiresHold(this);
+
+        SetPromptText(currentInteractable.GetPromptText(this));
+        SetHoldIndicatorVisible(requiresHold);
 
         float fillAmount = 0f;
-        if (currentInteractable.RequiresHold && holdInProgress && currentInteractable.HoldDuration > 0f)
-            fillAmount = Mathf.Clamp01(holdTimer / currentInteractable.HoldDuration);
+        float holdDuration = currentInteractable.GetHoldDuration(this);
+        if (requiresHold && holdInProgress && holdDuration > 0f)
+            fillAmount = Mathf.Clamp01(holdTimer / holdDuration);
 
         SetHoldFillAmount(fillAmount);
     }

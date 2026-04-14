@@ -15,8 +15,16 @@ public abstract class WorldInteractable : MonoBehaviour
     public string PromptText => promptText;
     public bool RequiresHold => requiresHold;
     public float HoldDuration => holdDuration;
+    public string GetPromptText(PlayerInteractor interactor) => ResolvePromptText(interactor);
+    public virtual bool GetRequiresHold(PlayerInteractor interactor) => requiresHold;
+    public virtual float GetHoldDuration(PlayerInteractor interactor) => holdDuration;
 
     // Pontos de extensao para as classes filhas reagirem ao foco e ao hold.
+    public virtual bool CanFocus(PlayerInteractor interactor)
+    {
+        return !isLocked;
+    }
+
     public virtual bool CanInteract(PlayerInteractor interactor)
     {
         return !isLocked;
@@ -40,6 +48,11 @@ public abstract class WorldInteractable : MonoBehaviour
     protected void LockInteraction()
     {
         isLocked = true;
+    }
+
+    protected virtual string ResolvePromptText(PlayerInteractor interactor)
+    {
+        return promptText;
     }
 
     // Contrato que cada interagivel concreto precisa implementar.

@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 3b4d914c8d5e45c4b9c501244c62edb3
+guid: 39497386513103b4387f45e9efad182e
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 986927193976118483
-    second: InteractButton_0
+      213: 4679799282331961904
+    second: Ferramentas1_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,23 +100,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: InteractButton_0
+      name: Hoe
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 32
+        x: 15
+        y: 16
+        width: 34
         height: 32
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3dc9e10dd0542bd00800000000000000
-      internalID: 986927193976118483
+      spriteID: 03a468317acf1f040800000000000000
+      internalID: 4679799282331961904
       vertices: []
       indices: 
       edges: []
@@ -125,7 +125,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 6eabaad55594398479acceb40b1ce714
     internalID: 0
     vertices: []
     indices: 
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      InteractButton_0: 986927193976118483
+      Hoe: 4679799282331961904
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

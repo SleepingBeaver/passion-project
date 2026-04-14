@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 3b4d914c8d5e45c4b9c501244c62edb3
+guid: 6d730cb6ad7893b45b8d6c3033a595b7
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 986927193976118483
-    second: InteractButton_0
+      213: -1362058913294850930
+    second: Crate_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,13 +100,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: InteractButton_0
+      name: Crate_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 32
-        height: 32
+        x: 9
+        y: 6
+        width: 47
+        height: 50
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -115,8 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3dc9e10dd0542bd00800000000000000
-      internalID: 986927193976118483
+      spriteID: e84e7e582aef81de0800000000000000
+      internalID: -1362058913294850930
       vertices: []
       indices: 
       edges: []
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      InteractButton_0: 986927193976118483
+      Crate_0: -1362058913294850930
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

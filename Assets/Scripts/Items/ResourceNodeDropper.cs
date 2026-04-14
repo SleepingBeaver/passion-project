@@ -14,6 +14,10 @@ public class ResourceNodeDropper : MonoBehaviour
     [SerializeField] private InventorySystem inventorySystem;
     [SerializeField] private Transform pickupTargetOverride;
 
+    public DroppedItemVisual DropPrefab => dropPrefab;
+    public InventorySystem InventorySystem => inventorySystem;
+    public Transform PickupTargetOverride => pickupTargetOverride;
+
     // Entrada publica chamada quando o nodo e quebrado.
     public void BreakNode()
     {

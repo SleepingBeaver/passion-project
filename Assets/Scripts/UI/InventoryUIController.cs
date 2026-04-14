@@ -9,20 +9,34 @@ public class InventoryUIController : MonoBehaviour
     [SerializeField] private Transform slotsParent;
     [SerializeField] private InventorySlotVisual slotPrefab;
     [SerializeField, Min(1)] private int slotCount = 20;
+    [SerializeField] private Canvas dragPreviewCanvas;
+    [SerializeField] private Vector2 dragPreviewOffset = new Vector2(18f, -18f);
+    [SerializeField, Range(0.15f, 1f)] private float dragPreviewAlpha = 0.9f;
 
     // Estado interno da interface.
     private readonly List<InventorySlotVisual> slotVisuals = new();
+    private readonly Dictionary<InventorySlotVisual, int> slotIndices = new();
     private int selectedSlotIndex = -1;
+    private RectTransform dragPreviewRect;
+    private Image dragPreviewImage;
+    private CanvasGroup dragPreviewCanvasGroup;
 
     // Leitura publica usada pelo sistema de inventario.
     public int SlotCount => slotCount;
     public int SlotsPerRow => ResolveSlotsPerRow();
+    public InventorySlotVisual SlotPrefab => slotPrefab;
 
     // Ciclo de vida.
     private void Awake()
     {
         ResolveInventorySystem();
+        ResolveDragPreviewCanvas();
         BuildSlots();
+    }
+
+    private void OnDisable()
+    {
+        ClearDragPreview();
     }
 
     // Montagem e atualizacao da interface.
@@ -36,6 +50,7 @@ public class InventoryUIController : MonoBehaviour
 
         ClearExistingChildren();
         slotVisuals.Clear();
+        slotIndices.Clear();
 
         for (int i = 0; i < slotCount; i++)
         {
@@ -44,7 +59,12 @@ public class InventoryUIController : MonoBehaviour
             slot.SetEmpty();
             int slotIndex = i;
             slot.Clicked += () => HandleSlotClicked(slotIndex);
+            slot.DragStarted += () => HandleSlotDragStarted(slotIndex);
+            slot.DragMoved += HandleSlotDragged;
+            slot.DragEnded += HandleSlotDragEnded;
+            slot.Dropped += draggedSlot => HandleSlotDropped(draggedSlot, slotIndex);
             slotVisuals.Add(slot);
+            slotIndices[slot] = slotIndex;
         }
 
         RefreshSelectionState();
@@ -105,6 +125,42 @@ public class InventoryUIController : MonoBehaviour
         inventorySystem.SelectSlot(slotIndex);
     }
 
+    private void HandleSlotDragStarted(int slotIndex)
+    {
+        ResolveInventorySystem();
+
+        if (inventorySystem == null || !inventorySystem.TryGetSlot(slotIndex, out InventorySlotData slotData) || slotData == null || slotData.IsEmpty)
+            return;
+
+        inventorySystem.SelectSlot(slotIndex);
+
+        if (slotIndex >= 0 && slotIndex < slotVisuals.Count)
+            ShowDragPreview(slotVisuals[slotIndex]);
+    }
+
+    private void HandleSlotDragged(Vector2 screenPosition)
+    {
+        UpdateDragPreviewPosition(screenPosition);
+    }
+
+    private void HandleSlotDragEnded()
+    {
+        ClearDragPreview();
+    }
+
+    private void HandleSlotDropped(InventorySlotVisual draggedSlot, int targetSlotIndex)
+    {
+        ResolveInventorySystem();
+
+        if (inventorySystem == null || !slotIndices.TryGetValue(draggedSlot, out int sourceSlotIndex))
+            return;
+
+        if (sourceSlotIndex == targetSlotIndex)
+            return;
+
+        inventorySystem.MoveOrSwapSlots(sourceSlotIndex, targetSlotIndex);
+    }
+
     private void RefreshSelectionState()
     {
         for (int i = 0; i < slotVisuals.Count; i++)
@@ -117,5 +173,87 @@ public class InventoryUIController : MonoBehaviour
     {
         if (inventorySystem == null)
             inventorySystem = FindFirstObjectByType<InventorySystem>();
+    }
+
+    private void ResolveDragPreviewCanvas()
+    {
+        if (dragPreviewCanvas != null)
+            dragPreviewCanvas = dragPreviewCanvas.rootCanvas;
+
+        if (dragPreviewCanvas == null)
+        {
+            Canvas canvas = GetComponentInParent<Canvas>();
+            if (canvas != null)
+                dragPreviewCanvas = canvas.rootCanvas;
+        }
+    }
+
+    private void ShowDragPreview(InventorySlotVisual sourceSlot)
+    {
+        ResolveDragPreviewCanvas();
+
+        if (dragPreviewCanvas == null || sourceSlot == null || !sourceSlot.HasItem || sourceSlot.DisplayedIcon == null)
+            return;
+
+        EnsureDragPreview();
+
+        dragPreviewImage.sprite = sourceSlot.DisplayedIcon;
+        dragPreviewImage.enabled = true;
+        dragPreviewCanvasGroup.alpha = dragPreviewAlpha;
+
+        Vector2 previewSize = sourceSlot.DragPreviewSize;
+        if (previewSize == Vector2.zero)
+            previewSize = new Vector2(48f, 48f);
+
+        dragPreviewRect.sizeDelta = previewSize;
+        dragPreviewRect.SetAsLastSibling();
+    }
+
+    private void EnsureDragPreview()
+    {
+        if (dragPreviewImage != null)
+            return;
+
+        GameObject previewObject = new("DraggedItemPreview", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
+        previewObject.transform.SetParent(dragPreviewCanvas.transform, false);
+
+        dragPreviewRect = previewObject.GetComponent<RectTransform>();
+        dragPreviewImage = previewObject.GetComponent<Image>();
+        dragPreviewCanvasGroup = previewObject.GetComponent<CanvasGroup>();
+
+        dragPreviewRect.anchorMin = new Vector2(0.5f, 0.5f);
+        dragPreviewRect.anchorMax = new Vector2(0.5f, 0.5f);
+        dragPreviewRect.pivot = new Vector2(0.5f, 0.5f);
+
+        dragPreviewCanvasGroup.blocksRaycasts = false;
+        dragPreviewCanvasGroup.interactable = false;
+        dragPreviewImage.raycastTarget = false;
+        dragPreviewImage.preserveAspect = true;
+        dragPreviewImage.enabled = false;
+    }
+
+    private void UpdateDragPreviewPosition(Vector2 screenPosition)
+    {
+        if (dragPreviewCanvas == null || dragPreviewRect == null || !dragPreviewImage.enabled)
+            return;
+
+        RectTransform canvasRect = dragPreviewCanvas.transform as RectTransform;
+        Camera eventCamera = dragPreviewCanvas.renderMode == RenderMode.ScreenSpaceOverlay
+            ? null
+            : dragPreviewCanvas.worldCamera;
+
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPosition, eventCamera, out Vector2 localPoint))
+            return;
+
+        dragPreviewRect.anchoredPosition = localPoint + dragPreviewOffset;
+    }
+
+    private void ClearDragPreview()
+    {
+        if (dragPreviewImage == null)
+            return;
+
+        dragPreviewImage.enabled = false;
+        dragPreviewImage.sprite = null;
     }
 }

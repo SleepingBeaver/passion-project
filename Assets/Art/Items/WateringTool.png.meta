@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 3b4d914c8d5e45c4b9c501244c62edb3
+guid: 611f44fc48505a84ba6ee16f9fdb4fc3
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 986927193976118483
-    second: InteractButton_0
+      213: 2876650075580173118
+    second: Ferramentas3_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,23 +100,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: InteractButton_0
+      name: WateringCan
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 32
-        height: 32
+        x: 13
+        y: 16
+        width: 37
+        height: 30
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3dc9e10dd0542bd00800000000000000
-      internalID: 986927193976118483
+      spriteID: e3b8e0aa00aebe720800000000000000
+      internalID: 2876650075580173118
       vertices: []
       indices: 
       edges: []
@@ -125,7 +125,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: f4cf93f564b00d54f948dcecf0e5dcad
     internalID: 0
     vertices: []
     indices: 
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      InteractButton_0: 986927193976118483
+      WateringCan: 2876650075580173118
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -5,11 +5,19 @@ public class TreeInteractable : WorldInteractable
 {
     // Configuracao da quebra da arvore.
     [Header("Tree")]
+    [SerializeField] private ItemData requiredTool;
+    [SerializeField] private string requiredToolId = "axe_tool";
+    [SerializeField] private string missingToolPromptText = "Selecione o machado";
     [SerializeField] private ResourceNodeDropper resourceDropper;
     [SerializeField] private Animator animator;
     [SerializeField] private string breakTriggerName = "Break";
     [SerializeField] private float breakDelayAfterComplete = 0.1f;
     [SerializeField] private Collider2D[] collidersToDisable;
+
+    public override bool CanInteract(PlayerInteractor interactor)
+    {
+        return base.CanInteract(interactor) && HasRequiredTool(interactor);
+    }
 
     // Fluxo de interacao disparado pelo jogador.
     protected override bool PerformInteraction(PlayerInteractor interactor)
@@ -32,6 +40,13 @@ public class TreeInteractable : WorldInteractable
         return true;
     }
 
+    protected override string ResolvePromptText(PlayerInteractor interactor)
+    {
+        return HasRequiredTool(interactor)
+            ? base.ResolvePromptText(interactor)
+            : missingToolPromptText;
+    }
+
     // Sequencia final de quebra e spawn dos recursos.
     private IEnumerator BreakRoutine()
     {
@@ -41,5 +56,16 @@ public class TreeInteractable : WorldInteractable
             resourceDropper.BreakNode();
         else
             Destroy(gameObject);
+    }
+
+    private bool HasRequiredTool(PlayerInteractor interactor)
+    {
+        if (interactor == null || interactor.InventorySystem == null)
+            return false;
+
+        if (requiredTool != null)
+            return interactor.InventorySystem.IsSelectedItem(requiredTool);
+
+        return interactor.InventorySystem.IsSelectedItemId(requiredToolId);
     }
 }

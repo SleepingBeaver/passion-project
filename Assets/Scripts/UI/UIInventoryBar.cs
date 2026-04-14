@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 using UnityEngine.UI;
 
 public class UIInventoryBar : MonoBehaviour
@@ -34,6 +35,7 @@ public class UIInventoryBar : MonoBehaviour
     // Estado interno da barra e componentes auxiliares.
     private readonly List<InventorySlotVisual> slotVisuals = new();
     private readonly List<InventorySlotData> inventory = new();
+    private readonly Dictionary<InventorySlotVisual, int> slotVisualIndices = new();
 
     private Button upButton;
     private Button downButton;
@@ -83,14 +85,18 @@ public class UIInventoryBar : MonoBehaviour
     {
         keyboard ??= Keyboard.current;
 
-        if (keyboard == null || GetMaxRowIndex() <= 0)
+        if (keyboard == null)
             return;
 
-        if (keyboard.upArrowKey.wasPressedThisFrame)
+        if (GetMaxRowIndex() > 0 && keyboard.upArrowKey.wasPressedThisFrame)
             PreviousRow(triggerFeedback: true);
 
-        if (keyboard.downArrowKey.wasPressedThisFrame)
+        if (GetMaxRowIndex() > 0 && keyboard.downArrowKey.wasPressedThisFrame)
             NextRow(triggerFeedback: true);
+
+        int visibleSlotIndex = ResolveNumericSelectionInput();
+        if (visibleSlotIndex >= 0)
+            SelectVisibleSlot(visibleSlotIndex);
     }
 
     // API publica para alimentar a barra e navegar entre linhas.
@@ -111,8 +117,7 @@ public class UIInventoryBar : MonoBehaviour
         if (!CanShowRow(nextRow))
             return;
 
-        currentRow = nextRow;
-        RefreshVisibleRow();
+        ChangeRowPreservingSelection(nextRow);
 
         if (triggerFeedback)
             PlayButtonFeedback(upwards: false);
@@ -124,8 +129,7 @@ public class UIInventoryBar : MonoBehaviour
         if (!CanShowRow(previousRow))
             return;
 
-        currentRow = previousRow;
-        RefreshVisibleRow();
+        ChangeRowPreservingSelection(previousRow);
 
         if (triggerFeedback)
             PlayButtonFeedback(upwards: true);
@@ -292,6 +296,7 @@ public class UIInventoryBar : MonoBehaviour
             return;
 
         ClearSlots();
+        slotVisualIndices.Clear();
 
         for (int i = 0; i < requiredSlotCount; i++)
         {
@@ -302,8 +307,11 @@ public class UIInventoryBar : MonoBehaviour
             slotVisual.SetEmpty();
             int visibleIndex = i;
             slotVisual.Clicked += () => HandleSlotClicked(visibleIndex);
+            slotVisual.DragStarted += () => HandleSlotDragStarted(visibleIndex);
+            slotVisual.Dropped += draggedSlot => HandleSlotDropped(draggedSlot, visibleIndex);
 
             slotVisuals.Add(slotVisual);
+            slotVisualIndices[slotVisual] = visibleIndex;
         }
 
         RefreshVisibleRow();
@@ -312,6 +320,7 @@ public class UIInventoryBar : MonoBehaviour
     private void ClearSlots()
     {
         slotVisuals.Clear();
+        slotVisualIndices.Clear();
 
         for (int i = slotsRoot.childCount - 1; i >= 0; i--)
         {
@@ -386,7 +395,52 @@ public class UIInventoryBar : MonoBehaviour
         return Mathf.CeilToInt(inventory.Count / (float)VisibleSlotCount) - 1;
     }
 
+    private void ChangeRowPreservingSelection(int targetRow)
+    {
+        ResolveInventorySystem();
+
+        if (inventorySystem == null)
+            return;
+
+        if (!CanShowRow(targetRow))
+            return;
+
+        int selectedVisibleIndex = ResolveSelectedVisibleIndex();
+        int targetRowStartIndex = targetRow * VisibleSlotCount;
+        int targetRowLastIndex = Mathf.Min(targetRowStartIndex + VisibleSlotCount - 1, inventory.Count - 1);
+        int targetInventoryIndex = Mathf.Clamp(targetRowStartIndex + selectedVisibleIndex, targetRowStartIndex, targetRowLastIndex);
+
+        inventorySystem.SelectSlot(targetInventoryIndex);
+    }
+
+    private int ResolveSelectedVisibleIndex()
+    {
+        if (selectedSlotIndex < 0)
+            return 0;
+
+        return Mathf.Clamp(selectedSlotIndex % VisibleSlotCount, 0, VisibleSlotCount - 1);
+    }
+
     private void HandleSlotClicked(int visibleIndex)
+    {
+        SelectVisibleSlot(visibleIndex);
+    }
+
+    private void SelectVisibleSlot(int visibleIndex)
+    {
+        ResolveInventorySystem();
+
+        if (inventorySystem == null)
+            return;
+
+        if (visibleIndex < 0 || visibleIndex >= VisibleSlotCount)
+            return;
+
+        int inventoryIndex = currentRow * VisibleSlotCount + visibleIndex;
+        inventorySystem.SelectSlot(inventoryIndex);
+    }
+
+    private void HandleSlotDragStarted(int visibleIndex)
     {
         ResolveInventorySystem();
 
@@ -394,7 +448,26 @@ public class UIInventoryBar : MonoBehaviour
             return;
 
         int inventoryIndex = currentRow * VisibleSlotCount + visibleIndex;
+        if (!inventorySystem.TryGetSlot(inventoryIndex, out InventorySlotData slotData) || slotData == null || slotData.IsEmpty)
+            return;
+
         inventorySystem.SelectSlot(inventoryIndex);
+    }
+
+    private void HandleSlotDropped(InventorySlotVisual draggedSlot, int targetVisibleIndex)
+    {
+        ResolveInventorySystem();
+
+        if (inventorySystem == null || !slotVisualIndices.TryGetValue(draggedSlot, out int sourceVisibleIndex))
+            return;
+
+        int sourceInventoryIndex = currentRow * VisibleSlotCount + sourceVisibleIndex;
+        int targetInventoryIndex = currentRow * VisibleSlotCount + targetVisibleIndex;
+
+        if (sourceInventoryIndex == targetInventoryIndex)
+            return;
+
+        inventorySystem.MoveOrSwapSlots(sourceInventoryIndex, targetInventoryIndex);
     }
 
     private void PlayButtonFeedback(bool upwards)
@@ -431,6 +504,28 @@ public class UIInventoryBar : MonoBehaviour
     {
         if (inventorySystem == null)
             inventorySystem = FindFirstObjectByType<InventorySystem>();
+    }
+
+    private int ResolveNumericSelectionInput()
+    {
+        if (WasSlotKeyPressed(keyboard.digit1Key, keyboard.numpad1Key)) return 0;
+        if (WasSlotKeyPressed(keyboard.digit2Key, keyboard.numpad2Key)) return 1;
+        if (WasSlotKeyPressed(keyboard.digit3Key, keyboard.numpad3Key)) return 2;
+        if (WasSlotKeyPressed(keyboard.digit4Key, keyboard.numpad4Key)) return 3;
+        if (WasSlotKeyPressed(keyboard.digit5Key, keyboard.numpad5Key)) return 4;
+        if (WasSlotKeyPressed(keyboard.digit6Key, keyboard.numpad6Key)) return 5;
+        if (WasSlotKeyPressed(keyboard.digit7Key, keyboard.numpad7Key)) return 6;
+        if (WasSlotKeyPressed(keyboard.digit8Key, keyboard.numpad8Key)) return 7;
+        if (WasSlotKeyPressed(keyboard.digit9Key, keyboard.numpad9Key)) return 8;
+        if (WasSlotKeyPressed(keyboard.digit0Key, keyboard.numpad0Key)) return 9;
+
+        return -1;
+    }
+
+    private static bool WasSlotKeyPressed(KeyControl mainKey, KeyControl alternateKey)
+    {
+        return (mainKey != null && mainKey.wasPressedThisFrame) ||
+               (alternateKey != null && alternateKey.wasPressedThisFrame);
     }
 
     private static T GetOrAddComponent<T>(GameObject target) where T : Component

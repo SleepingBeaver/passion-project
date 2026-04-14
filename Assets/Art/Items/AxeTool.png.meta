@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 3b4d914c8d5e45c4b9c501244c62edb3
+guid: b0891e16e6c710d4dafdea3939caaa7a
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 986927193976118483
-    second: InteractButton_0
+      213: 5832026285406678792
+    second: Ferramentas2_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,23 +100,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: InteractButton_0
+      name: Axe
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 32
-        height: 32
+        x: 14
+        y: 15
+        width: 35
+        height: 29
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3dc9e10dd0542bd00800000000000000
-      internalID: 986927193976118483
+      spriteID: 80fe766d1058fe050800000000000000
+      internalID: 5832026285406678792
       vertices: []
       indices: 
       edges: []
@@ -125,7 +125,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 8c33b070bb47d24429d66a2e29eb1540
     internalID: 0
     vertices: []
     indices: 
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      InteractButton_0: 986927193976118483
+      Axe: 5832026285406678792
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

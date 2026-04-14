@@ -6,8 +6,10 @@ public class InventoryDebugInput : MonoBehaviour
     // Configuracao usada apenas em ambiente de teste.
     [SerializeField] private InventorySystem inventorySystem;
     [SerializeField] private ItemData woodItem;
+    [SerializeField] private ItemData crateItem;
     [SerializeField] private int addAmountPerPress = 1;
     [SerializeField] private int removeAmountPerPress = 1;
+    [SerializeField] private int addCrateAmountPerPress = 1;
 
     private Keyboard keyboard;
 
@@ -27,10 +29,10 @@ public class InventoryDebugInput : MonoBehaviour
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         keyboard ??= Keyboard.current;
 
-        if (keyboard == null || inventorySystem == null || woodItem == null)
+        if (keyboard == null || inventorySystem == null)
             return;
 
-        if (keyboard.mKey.wasPressedThisFrame)
+        if (woodItem != null && keyboard.mKey.wasPressedThisFrame)
         {
             bool addedAll = inventorySystem.AddItem(woodItem, addAmountPerPress);
 
@@ -39,13 +41,22 @@ public class InventoryDebugInput : MonoBehaviour
                 : $"Inventario cheio. Total atual de {woodItem.itemName}: {inventorySystem.CountItem(woodItem)}");
         }
 
-        if (keyboard.nKey.wasPressedThisFrame)
+        if (woodItem != null && keyboard.nKey.wasPressedThisFrame)
         {
             bool removed = inventorySystem.RemoveItem(woodItem, removeAmountPerPress);
 
             Debug.Log(removed
                 ? $"Removido: {removeAmountPerPress}x {woodItem.itemName}. Total: {inventorySystem.CountItem(woodItem)}"
                 : $"Nao ha quantidade suficiente para remover. Total atual: {inventorySystem.CountItem(woodItem)}");
+        }
+
+        if (crateItem != null && keyboard.bKey.wasPressedThisFrame)
+        {
+            bool addedAll = inventorySystem.AddItem(crateItem, addCrateAmountPerPress);
+
+            Debug.Log(addedAll
+                ? $"Adicionado: {addCrateAmountPerPress}x {crateItem.itemName}. Total: {inventorySystem.CountItem(crateItem)}"
+                : $"Inventario cheio. Total atual de {crateItem.itemName}: {inventorySystem.CountItem(crateItem)}");
         }
 #endif
     }
