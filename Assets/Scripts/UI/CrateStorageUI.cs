@@ -69,7 +69,7 @@ public class CrateStorageUI : MonoBehaviour
 
     private bool wasInteractorEnabled;
     private bool wasMovementEnabled;
-    private bool wasSimpleInventoryUIEnabled;
+    private bool usingSimpleInventoryModal;
     private bool pausedByStorage;
     private float previousTimeScale = 1f;
 
@@ -308,12 +308,7 @@ public class CrateStorageUI : MonoBehaviour
                 return;
 
             simpleInventoryUI = FindFirstObjectByType<SimpleInventoryUI>();
-
-            if (simpleInventoryUI != null)
-            {
-                wasSimpleInventoryUIEnabled = simpleInventoryUI.enabled;
-                simpleInventoryUI.enabled = false;
-            }
+            usingSimpleInventoryModal = simpleInventoryUI != null && simpleInventoryUI.TryOpenExternalModal();
 
             if (activeInteractor != null)
             {
@@ -321,14 +316,18 @@ public class CrateStorageUI : MonoBehaviour
                 activeInteractor.enabled = false;
             }
 
-            if (activeMovement != null)
+            if (!usingSimpleInventoryModal && activeMovement != null)
             {
                 wasMovementEnabled = activeMovement.enabled;
                 activeMovement.enabled = false;
             }
 
-            previousTimeScale = Time.timeScale;
-            Time.timeScale = 0f;
+            if (!usingSimpleInventoryModal)
+            {
+                previousTimeScale = Time.timeScale;
+                Time.timeScale = 0f;
+            }
+
             pausedByStorage = true;
             return;
         }
@@ -336,17 +335,25 @@ public class CrateStorageUI : MonoBehaviour
         if (!pausedByStorage)
             return;
 
-        Time.timeScale = previousTimeScale;
         pausedByStorage = false;
 
-        if (activeMovement != null)
-            activeMovement.enabled = wasMovementEnabled;
+        if (usingSimpleInventoryModal)
+        {
+            if (simpleInventoryUI != null)
+                simpleInventoryUI.CloseExternalModal();
+        }
+        else
+        {
+            Time.timeScale = previousTimeScale;
+
+            if (activeMovement != null)
+                activeMovement.enabled = wasMovementEnabled;
+        }
 
         if (activeInteractor != null)
             activeInteractor.enabled = wasInteractorEnabled;
 
-        if (simpleInventoryUI != null)
-            simpleInventoryUI.enabled = wasSimpleInventoryUIEnabled;
+        usingSimpleInventoryModal = false;
     }
 
     private void EnsureRuntimeUI()
@@ -790,23 +797,29 @@ public class CrateStorageUI : MonoBehaviour
         ItemData itemData = slotData.item;
         int amount = slotData.amount;
 
-        if (!activeCrate.AddItem(itemData, amount))
+        bool addedAll = activeCrate.AddItem(itemData, amount, out int addedAmount);
+
+        if (addedAmount <= 0)
         {
             SetHint("Caixote cheio.");
             return false;
         }
 
-        if (!inventorySystem.RemoveFromSlot(slotIndex, amount, out ItemData removedItem, out int removedAmount) ||
+        if (!inventorySystem.RemoveFromSlot(slotIndex, addedAmount, out ItemData removedItem, out int removedAmount) ||
             removedItem != itemData ||
-            removedAmount != amount)
+            removedAmount != addedAmount)
         {
-            activeCrate.RemoveItem(itemData, amount);
+            activeCrate.RemoveItem(itemData, addedAmount);
             SetHint("Nao foi possivel guardar a pilha.");
             return false;
         }
 
         if (showSuccessMessage)
-            SetHint($"Guardado: {removedAmount}x {itemData.itemName}");
+        {
+            SetHint(addedAll
+                ? $"Guardado: {removedAmount}x {itemData.itemName}"
+                : $"Caixote cheio. Guardado: {removedAmount}x {itemData.itemName}");
+        }
 
         return true;
     }
@@ -822,23 +835,29 @@ public class CrateStorageUI : MonoBehaviour
         ItemData itemData = slotData.item;
         int amount = slotData.amount;
 
-        if (!inventorySystem.AddItem(itemData, amount))
+        bool addedAll = inventorySystem.AddItem(itemData, amount, out int addedAmount);
+
+        if (addedAmount <= 0)
         {
             SetHint("Inventario cheio.");
             return false;
         }
 
-        if (!activeCrate.RemoveFromSlot(slotIndex, amount, out ItemData removedItem, out int removedAmount) ||
+        if (!activeCrate.RemoveFromSlot(slotIndex, addedAmount, out ItemData removedItem, out int removedAmount) ||
             removedItem != itemData ||
-            removedAmount != amount)
+            removedAmount != addedAmount)
         {
-            inventorySystem.RemoveItem(itemData, amount);
+            inventorySystem.RemoveItem(itemData, addedAmount);
             SetHint("Nao foi possivel retirar a pilha.");
             return false;
         }
 
         if (showSuccessMessage)
-            SetHint($"Retirado: {removedAmount}x {itemData.itemName}");
+        {
+            SetHint(addedAll
+                ? $"Retirado: {removedAmount}x {itemData.itemName}"
+                : $"Inventario cheio. Retirado: {removedAmount}x {itemData.itemName}");
+        }
 
         return true;
     }

@@ -13,6 +13,28 @@ public class InventoryDebugInput : MonoBehaviour
 
     private Keyboard keyboard;
 
+    public bool TryGetConfiguredItem(string itemId, out ItemData itemData)
+    {
+        itemData = null;
+
+        if (string.IsNullOrWhiteSpace(itemId))
+            return false;
+
+        if (MatchesItemId(woodItem, itemId))
+        {
+            itemData = woodItem;
+            return true;
+        }
+
+        if (MatchesItemId(crateItem, itemId))
+        {
+            itemData = crateItem;
+            return true;
+        }
+
+        return false;
+    }
+
     // Ciclo de vida.
     private void Awake()
     {
@@ -59,5 +81,12 @@ public class InventoryDebugInput : MonoBehaviour
                 : $"Inventario cheio. Total atual de {crateItem.itemName}: {inventorySystem.CountItem(crateItem)}");
         }
 #endif
+    }
+
+    private static bool MatchesItemId(ItemData itemData, string itemId)
+    {
+        return itemData != null &&
+               !string.IsNullOrWhiteSpace(itemData.itemId) &&
+               string.Equals(itemData.itemId, itemId, System.StringComparison.OrdinalIgnoreCase);
     }
 }

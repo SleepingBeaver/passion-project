@@ -110,17 +110,10 @@ public class UIInfoPanel : MonoBehaviour
         if (info == null)
             return;
 
-        if (seasonText != null)
-            seasonText.text = SeasonLabels[(int)info.CurrentSeason];
-
-        if (dayText != null)
-            dayText.text = info.CurrentDayOfSeason.ToString("00");
-
-        if (weekDayText != null)
-            weekDayText.text = WeekDayLabels[(int)info.CurrentWeekDay];
-
-        if (timeText != null)
-            timeText.text = info.GetFormattedTime12Hour();
+        SetTextIfChanged(seasonText, SeasonLabels[(int)info.CurrentSeason]);
+        SetTextIfChanged(dayText, info.CurrentDayOfSeason.ToString("00"));
+        SetTextIfChanged(weekDayText, WeekDayLabels[(int)info.CurrentWeekDay]);
+        SetTextIfChanged(timeText, info.GetFormattedTime12Hour());
 
         string moneyString = info.Money.ToString("0000000");
 
@@ -129,16 +122,22 @@ public class UIInfoPanel : MonoBehaviour
             if (moneyDigitTexts[i] == null)
                 continue;
 
-            moneyDigitTexts[i].text = i < moneyString.Length
+            string digitText = i < moneyString.Length
                 ? moneyString[i].ToString()
                 : "0";
+
+            SetTextIfChanged(moneyDigitTexts[i], digitText);
         }
 
         if (weatherImage != null)
         {
             Sprite weatherSprite = GetWeatherSprite(info.CurrentWeather);
-            weatherImage.sprite = weatherSprite;
-            weatherImage.enabled = weatherSprite != null;
+            if (weatherImage.sprite != weatherSprite)
+                weatherImage.sprite = weatherSprite;
+
+            bool shouldEnableWeather = weatherSprite != null;
+            if (weatherImage.enabled != shouldEnableWeather)
+                weatherImage.enabled = shouldEnableWeather;
         }
     }
 
@@ -543,6 +542,12 @@ public class UIInfoPanel : MonoBehaviour
 
         text.color = textColor;
         text.raycastTarget = false;
+    }
+
+    private static void SetTextIfChanged(TextMeshProUGUI text, string value)
+    {
+        if (text != null && text.text != value)
+            text.text = value;
     }
 
     private Color ResolveTextColor()

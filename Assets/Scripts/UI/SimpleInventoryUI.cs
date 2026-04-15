@@ -41,10 +41,17 @@ public class SimpleInventoryUI : MonoBehaviour
     // Estado interno da janela.
     private bool isOpen;
     private bool isTransitioning;
+    private bool isExternalModalOpen;
     private bool isGamePausedByInventory;
     private float previousTimeScale = 1f;
+    private int modalLockCount;
+    private int ignoredInputFrame = -1;
     private Keyboard keyboard;
     private readonly List<HudVisibilityState> hudVisibilityStates = new();
+
+    public bool IsOpen => isOpen;
+    public bool IsTransitioning => isTransitioning;
+    public bool IsExternalModalOpen => isExternalModalOpen;
 
     // Ciclo de vida.
     private void Start()
@@ -63,7 +70,7 @@ public class SimpleInventoryUI : MonoBehaviour
     {
         keyboard ??= Keyboard.current;
 
-        if (keyboard == null || isTransitioning)
+        if (keyboard == null || isTransitioning || isExternalModalOpen || ignoredInputFrame == Time.frameCount)
             return;
 
         bool tabPressed = keyboard.tabKey.wasPressedThisFrame;
@@ -81,7 +88,35 @@ public class SimpleInventoryUI : MonoBehaviour
 
     private void OnDisable()
     {
-        SetGamePaused(false);
+        isOpen = false;
+        isTransitioning = false;
+        isExternalModalOpen = false;
+        modalLockCount = 0;
+        RestoreGameplayStateImmediate();
+    }
+
+    public bool TryOpenExternalModal()
+    {
+        if (!ValidateReferences() || isOpen || isTransitioning)
+            return false;
+
+        if (isExternalModalOpen)
+            return true;
+
+        isExternalModalOpen = true;
+        ignoredInputFrame = Time.frameCount;
+        AcquireModalLock();
+        return true;
+    }
+
+    public void CloseExternalModal()
+    {
+        if (!isExternalModalOpen)
+            return;
+
+        isExternalModalOpen = false;
+        ignoredInputFrame = Time.frameCount;
+        ReleaseModalLock();
     }
 
     // Validacao inicial antes de liberar a janela.
@@ -122,13 +157,14 @@ public class SimpleInventoryUI : MonoBehaviour
     // Sequencia de abertura do inventario.
     private IEnumerator OpenInventoryRoutine()
     {
+        if (isExternalModalOpen)
+            yield break;
+
         isTransitioning = true;
         isOpen = true;
 
         inventoryUIRoot.SetActive(true);
-        SetPlayerMovementEnabled(false);
-        SetHudObjectsVisible(false);
-        SetGamePaused(true);
+        AcquireModalLock();
         PlayUIClip(openClip, openVolume);
 
         dimBackgroundCanvasGroup.alpha = 0f;
@@ -207,6 +243,8 @@ public class SimpleInventoryUI : MonoBehaviour
     // Restauracao imediata do estado fechado.
     private void SetClosedStateImmediate()
     {
+        bool wasInventoryOpen = isOpen;
+
         dimBackgroundCanvasGroup.alpha = 0f;
         dimBackgroundCanvasGroup.interactable = false;
         dimBackgroundCanvasGroup.blocksRaycasts = false;
@@ -219,9 +257,11 @@ public class SimpleInventoryUI : MonoBehaviour
         inventoryUIRoot.SetActive(false);
 
         isOpen = false;
-        SetPlayerMovementEnabled(true);
-        SetHudObjectsVisible(true);
-        SetGamePaused(false);
+
+        if (wasInventoryOpen)
+            ReleaseModalLock();
+        else if (!isExternalModalOpen && modalLockCount == 0)
+            RestoreGameplayStateImmediate();
     }
 
     // Controle do jogador e feedback.
@@ -315,6 +355,38 @@ public class SimpleInventoryUI : MonoBehaviour
 
         Time.timeScale = previousTimeScale;
         isGamePausedByInventory = false;
+    }
+
+    private void AcquireModalLock()
+    {
+        modalLockCount++;
+
+        if (modalLockCount > 1)
+            return;
+
+        SetPlayerMovementEnabled(false);
+        SetHudObjectsVisible(false);
+        SetGamePaused(true);
+    }
+
+    private void ReleaseModalLock()
+    {
+        if (modalLockCount <= 0)
+            return;
+
+        modalLockCount--;
+
+        if (modalLockCount > 0)
+            return;
+
+        RestoreGameplayStateImmediate();
+    }
+
+    private void RestoreGameplayStateImmediate()
+    {
+        SetPlayerMovementEnabled(true);
+        SetHudObjectsVisible(true);
+        SetGamePaused(false);
     }
 
     // Estrutura interna para lembrar o estado original da HUD.

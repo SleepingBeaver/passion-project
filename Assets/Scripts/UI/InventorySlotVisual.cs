@@ -28,7 +28,6 @@ public class InventorySlotVisual : MonoBehaviour, IPointerClickHandler, IBeginDr
     private CanvasGroup canvasGroup;
     private RectTransform slotRectTransform;
     private RectTransform itemIconRectTransform;
-    private Vector2 lastResolvedSlotSize = new(float.MinValue, float.MinValue);
 
     // Evento disparado quando o jogador clica no slot.
     public event Action Clicked;
@@ -87,12 +86,10 @@ public class InventorySlotVisual : MonoBehaviour, IPointerClickHandler, IBeginDr
 
     private void LateUpdate()
     {
-        if (!HasItem || itemIcon == null || itemIconRectTransform == null)
+        if (!iconLayoutDirty || !HasItem || itemIcon == null || itemIconRectTransform == null)
             return;
 
-        Vector2 currentSlotSize = GetCurrentSlotSize();
-        if (iconLayoutDirty || !Approximately(currentSlotSize, lastResolvedSlotSize))
-            ResizeItemSpriteToCurrentSlot();
+        ResizeItemSpriteToCurrentSlot();
     }
 
     private void OnRectTransformDimensionsChange()
@@ -114,6 +111,7 @@ public class InventorySlotVisual : MonoBehaviour, IPointerClickHandler, IBeginDr
 
         displayedItem = slotData.item;
         displayedAmount = slotData.amount;
+        iconLayoutDirty = true;
 
         if (itemIcon != null)
         {
@@ -137,6 +135,7 @@ public class InventorySlotVisual : MonoBehaviour, IPointerClickHandler, IBeginDr
 
         displayedItem = null;
         displayedAmount = 0;
+        iconLayoutDirty = false;
 
         if (itemIcon != null)
         {
@@ -233,13 +232,17 @@ public class InventorySlotVisual : MonoBehaviour, IPointerClickHandler, IBeginDr
         Sprite spriteToUse = isSelected && selectedBackgroundSprite != null
             ? selectedBackgroundSprite
             : defaultBackgroundSprite;
+        bool shouldEnableBackground = spriteToUse != null;
+        bool shouldEnableOutline = isSelected && selectedBackgroundSprite == null;
 
-        backgroundImage.enabled = spriteToUse != null;
+        if (backgroundImage.enabled != shouldEnableBackground)
+            backgroundImage.enabled = shouldEnableBackground;
 
-        if (spriteToUse != null)
+        if (spriteToUse != null && backgroundImage.sprite != spriteToUse)
             backgroundImage.sprite = spriteToUse;
 
-        selectionOutline.enabled = isSelected && selectedBackgroundSprite == null;
+        if (selectionOutline.enabled != shouldEnableOutline)
+            selectionOutline.enabled = shouldEnableOutline;
     }
 
     private void OnDisable()
@@ -338,7 +341,6 @@ public class InventorySlotVisual : MonoBehaviour, IPointerClickHandler, IBeginDr
         itemIconRectTransform.anchoredPosition = Vector2.zero;
         itemIconRectTransform.sizeDelta = finalSize;
         itemIconRectTransform.localScale = Vector3.one;
-        lastResolvedSlotSize = slotSize;
         iconLayoutDirty = false;
     }
 
@@ -352,8 +354,7 @@ public class InventorySlotVisual : MonoBehaviour, IPointerClickHandler, IBeginDr
         itemIconRectTransform.pivot = new Vector2(0.5f, 0.5f);
         itemIconRectTransform.anchoredPosition = Vector2.zero;
         itemIconRectTransform.localScale = Vector3.one;
-        lastResolvedSlotSize = new Vector2(float.MinValue, float.MinValue);
-        iconLayoutDirty = true;
+        iconLayoutDirty = false;
     }
 
     private static float GetItemIconScale(ItemData itemData)
@@ -362,12 +363,6 @@ public class InventorySlotVisual : MonoBehaviour, IPointerClickHandler, IBeginDr
             return 1f;
 
         return Mathf.Max(0.1f, itemData.inventoryIconScale);
-    }
-
-    private static bool Approximately(Vector2 first, Vector2 second)
-    {
-        return Mathf.Approximately(first.x, second.x) &&
-               Mathf.Approximately(first.y, second.y);
     }
 
     private static T GetOrAddComponent<T>(GameObject target) where T : Component

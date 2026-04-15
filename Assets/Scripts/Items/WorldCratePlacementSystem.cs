@@ -7,6 +7,8 @@ using UnityEngine.SceneManagement;
 [DisallowMultipleComponent]
 public class WorldCratePlacementSystem : MonoBehaviour
 {
+    private const float ReferenceResolveRetryInterval = 0.5f;
+
     [Header("References")]
     [SerializeField] private InventorySystem inventorySystem;
     [SerializeField] private Camera worldCamera;
@@ -15,20 +17,26 @@ public class WorldCratePlacementSystem : MonoBehaviour
 
     [Header("Placement")]
     [SerializeField] private string placeableCrateItemId = "crate";
+    [SerializeField, Min(0.1f)] private float maxPlacementDistance = 2.5f;
     [SerializeField] private Color validTint = new(1f, 1f, 1f, 0.75f);
     [SerializeField] private Color invalidTint = new(1f, 0.45f, 0.45f, 0.72f);
     [SerializeField] private string sortingLayerName = "Objects";
     [SerializeField] private int sortingOrder;
 
     private Mouse mouse;
+    private Transform placementOrigin;
     private GameObject ghostRoot;
     private SpriteRenderer ghostRenderer;
     private DroppedItemVisual sharedDropPrefab;
+    private readonly Collider2D[] placementOverlapResults = new Collider2D[8];
+    private ContactFilter2D placementContactFilter;
+    private float nextReferenceResolveTime;
     private bool mirrorPlacementSprite;
 
     private void Awake()
     {
         mouse = Mouse.current;
+        ConfigurePlacementContactFilter();
         ResolveReferences();
         EnsureGhost();
         HideGhost();
@@ -37,6 +45,7 @@ public class WorldCratePlacementSystem : MonoBehaviour
     private void OnEnable()
     {
         mouse = Mouse.current;
+        ConfigurePlacementContactFilter();
         ResolveReferences();
         EnsureGhost();
         HideGhost();
@@ -50,7 +59,9 @@ public class WorldCratePlacementSystem : MonoBehaviour
     private void Update()
     {
         mouse ??= Mouse.current;
-        ResolveReferences();
+
+        if (HasMissingReferences() && Time.unscaledTime >= nextReferenceResolveTime)
+            ResolveReferences();
 
         if (mouse == null || inventorySystem == null || IsPointerInputBlocked())
         {
@@ -135,12 +146,21 @@ public class WorldCratePlacementSystem : MonoBehaviour
 
     private bool CanPlaceAt(Vector3 placementPosition)
     {
-        Vector2 checkCenter = (Vector2)placementPosition + CrateStorageInteractable.DefaultColliderOffset;
-        Collider2D[] hits = Physics2D.OverlapBoxAll(checkCenter, CrateStorageInteractable.DefaultColliderSize, 0f);
+        if (!IsWithinPlacementRange(placementPosition))
+            return false;
 
-        for (int i = 0; i < hits.Length; i++)
+        Vector2 checkCenter = (Vector2)placementPosition + CrateStorageInteractable.DefaultColliderOffset;
+        int hitCount = Physics2D.OverlapBox(
+            checkCenter,
+            CrateStorageInteractable.DefaultColliderSize,
+            0f,
+            placementContactFilter,
+            placementOverlapResults
+        );
+
+        for (int i = 0; i < hitCount; i++)
         {
-            Collider2D hit = hits[i];
+            Collider2D hit = placementOverlapResults[i];
 
             if (hit == null || hit.isTrigger)
                 continue;
@@ -151,12 +171,56 @@ public class WorldCratePlacementSystem : MonoBehaviour
         return true;
     }
 
+    private bool IsWithinPlacementRange(Vector3 placementPosition)
+    {
+        if (placementOrigin == null)
+            return true;
+
+        Vector2 origin = placementOrigin.position;
+        Vector2 target = placementPosition;
+        float maxDistanceSqr = maxPlacementDistance * maxPlacementDistance;
+        return (target - origin).sqrMagnitude <= maxDistanceSqr;
+    }
+
     private void ResolveReferences()
     {
+        nextReferenceResolveTime = Time.unscaledTime + ReferenceResolveRetryInterval;
+
         inventorySystem ??= FindFirstObjectByType<InventorySystem>();
         worldCamera ??= Camera.main != null ? Camera.main : FindFirstObjectByType<Camera>();
         targetGrid ??= FindFirstObjectByType<Grid>();
         eventSystem ??= EventSystem.current;
+
+        if (placementOrigin == null)
+        {
+            PlayerInteractor playerInteractor = FindFirstObjectByType<PlayerInteractor>();
+            if (playerInteractor != null)
+                placementOrigin = playerInteractor.ActorTransform;
+        }
+
+        if (placementOrigin == null)
+        {
+            IsoPlayerController2D playerMovement = FindFirstObjectByType<IsoPlayerController2D>();
+            if (playerMovement != null)
+                placementOrigin = playerMovement.transform;
+        }
+    }
+
+    private bool HasMissingReferences()
+    {
+        return inventorySystem == null ||
+               worldCamera == null ||
+               eventSystem == null ||
+               placementOrigin == null;
+    }
+
+    private void ConfigurePlacementContactFilter()
+    {
+        placementContactFilter = default;
+        placementContactFilter.useTriggers = false;
+        placementContactFilter.useLayerMask = false;
+        placementContactFilter.useDepth = false;
+        placementContactFilter.useNormalAngle = false;
     }
 
     private DroppedItemVisual ResolveSharedDropPrefab()
@@ -189,10 +253,18 @@ public class WorldCratePlacementSystem : MonoBehaviour
         if (ghostRenderer == null)
             return;
 
-        ghostRenderer.sprite = iconSprite;
-        ghostRenderer.flipX = mirrorPlacementSprite;
-        ghostRenderer.color = canPlace ? validTint : invalidTint;
-        ghostRenderer.transform.position = worldPosition;
+        if (ghostRenderer.sprite != iconSprite)
+            ghostRenderer.sprite = iconSprite;
+
+        if (ghostRenderer.flipX != mirrorPlacementSprite)
+            ghostRenderer.flipX = mirrorPlacementSprite;
+
+        Color tint = canPlace ? validTint : invalidTint;
+        if (ghostRenderer.color != tint)
+            ghostRenderer.color = tint;
+
+        if (ghostRenderer.transform.position != worldPosition)
+            ghostRenderer.transform.position = worldPosition;
 
         if (!ghostRenderer.gameObject.activeSelf)
             ghostRenderer.gameObject.SetActive(true);

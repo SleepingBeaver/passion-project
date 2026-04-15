@@ -14,12 +14,20 @@ public class PlantInteractable : WorldInteractable
         if (itemData == null || interactor.InventorySystem == null)
             return false;
 
-        bool added = interactor.InventorySystem.AddItem(itemData, amount);
+        interactor.InventorySystem.AddItem(itemData, amount, out int addedAmount);
 
-        if (!added)
+        if (addedAmount <= 0)
         {
             Debug.Log($"Inventario cheio. Nao foi possivel coletar {itemData.itemName}.");
             return false;
+        }
+
+        amount -= addedAmount;
+
+        if (amount > 0)
+        {
+            Debug.Log($"Inventario cheio. Coletado parcialmente: {addedAmount}x {itemData.itemName}.");
+            return true;
         }
 
         if (destroyOnCollect)

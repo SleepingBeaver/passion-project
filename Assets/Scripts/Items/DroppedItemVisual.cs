@@ -227,14 +227,17 @@ public class DroppedItemVisual : MonoBehaviour
             return;
         }
 
-        bool added = inventorySystem.AddItem(itemData, amount);
+        bool addedAll = inventorySystem.AddItem(itemData, amount, out int addedAmount);
 
-        if (added)
+        if (addedAll)
         {
             Destroy(gameObject);
         }
         else
         {
+            if (addedAmount > 0)
+                amount -= addedAmount;
+
             state = DropState.Idle;
             currentMagnetSpeed = startMagnetSpeed;
             magnetUnlockTime = Time.time + 0.2f;

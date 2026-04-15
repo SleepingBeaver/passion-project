@@ -67,14 +67,17 @@
     <Compile Include="Assets\Scripts\UI\InventorySlotVisual.cs" />
     <Compile Include="Assets\Scripts\UI\UIInfoPanel.cs" />
     <Compile Include="Assets\Scripts\UI\InventorySlotData.cs" />
+    <Compile Include="Assets\Scripts\UI\CraftingUI.cs" />
     <Compile Include="Assets\Scripts\Player\IsoPlayerController2D.cs" />
     <Compile Include="Assets\Scripts\Items\WorldCratePlacementSystem.cs" />
     <Compile Include="Assets\Scripts\UI\ItemData.cs" />
+    <Compile Include="Assets\Scripts\UI\CraftingRecipeDefinition.cs" />
     <Compile Include="Assets\Scripts\UI\PresentationLayoutController.cs" />
     <Compile Include="Assets\Scripts\UI\InventorySystem.cs" />
     <Compile Include="Assets\Scripts\Items\PlantInteractable.cs" />
     <Compile Include="Assets\Scripts\Items\ResourceNodeDropper.cs" />
     <Compile Include="Assets\Scripts\Items\CrateStorageInteractable.cs" />
+    <Compile Include="Assets\Scripts\UI\CraftingSystem.cs" />
     <Compile Include="Assets\Scripts\UI\InventoryItem.cs" />
     <Compile Include="Assets\Scripts\UI\UIInventoryBar.cs" />
     <Compile Include="Assets\Scripts\UI\UIInventorySlot.cs" />

@@ -100,6 +100,13 @@ public class CrateStorageInteractable : WorldInteractable
 
     public bool AddItem(ItemData itemData, int amount)
     {
+        return AddItem(itemData, amount, out _);
+    }
+
+    public bool AddItem(ItemData itemData, int amount, out int addedAmount)
+    {
+        addedAmount = 0;
+
         if (itemData == null || amount <= 0)
             return false;
 
@@ -111,6 +118,7 @@ public class CrateStorageInteractable : WorldInteractable
             amount = 1;
         }
 
+        int requestedAmount = amount;
         int remaining = amount;
         bool changed = false;
         int maxStack = itemData.isUnique ? 1 : Mathf.Max(1, itemData.maxStack);
@@ -148,6 +156,7 @@ public class CrateStorageInteractable : WorldInteractable
         if (changed)
             NotifyStorageChanged();
 
+        addedAmount = requestedAmount - remaining;
         return remaining == 0;
     }
 

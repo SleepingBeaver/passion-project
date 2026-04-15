@@ -49,7 +49,12 @@ public class InventorySystem : MonoBehaviour
     // Operacoes publicas de inventario.
     public bool AddItem(ItemData itemData, int amount = 1)
     {
-        return TryAddItem(itemData, amount, refreshUI: true);
+        return AddItem(itemData, amount, out _);
+    }
+
+    public bool AddItem(ItemData itemData, int amount, out int addedAmount)
+    {
+        return TryAddItem(itemData, amount, refreshUI: true, out addedAmount);
     }
 
     public bool RemoveItem(ItemData itemData, int amount = 1)
@@ -220,8 +225,10 @@ public class InventorySystem : MonoBehaviour
             : -1;
     }
 
-    private bool TryAddItem(ItemData itemData, int amount, bool refreshUI)
+    private bool TryAddItem(ItemData itemData, int amount, bool refreshUI, out int addedAmount)
     {
+        addedAmount = 0;
+
         if (itemData == null || amount <= 0)
             return false;
 
@@ -233,6 +240,7 @@ public class InventorySystem : MonoBehaviour
             amount = 1;
         }
 
+        int requestedAmount = amount;
         int remaining = amount;
         bool changed = false;
         int maxStack = itemData.isUnique ? 1 : Mathf.Max(1, itemData.maxStack);
@@ -270,6 +278,7 @@ public class InventorySystem : MonoBehaviour
         if (changed && refreshUI)
             RefreshUI();
 
+        addedAmount = requestedAmount - remaining;
         return remaining == 0;
     }
 
@@ -284,7 +293,7 @@ public class InventorySystem : MonoBehaviour
             if (starterEntry.item == null)
                 continue;
 
-            TryAddItem(starterEntry.item, starterEntry.amount, refreshUI: false);
+            TryAddItem(starterEntry.item, starterEntry.amount, refreshUI: false, out _);
         }
     }
 
