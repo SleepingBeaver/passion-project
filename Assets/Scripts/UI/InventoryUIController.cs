@@ -32,6 +32,12 @@ public class InventoryUIController : MonoBehaviour
         ResolveInventorySystem();
         ResolveDragPreviewCanvas();
         BuildSlots();
+        SyncFromInventorySystem();
+    }
+
+    private void OnEnable()
+    {
+        SyncFromInventorySystem();
     }
 
     private void OnDisable()
@@ -54,17 +60,9 @@ public class InventoryUIController : MonoBehaviour
 
         for (int i = 0; i < slotCount; i++)
         {
-            InventorySlotVisual slot = Instantiate(slotPrefab, slotsParent);
-            slot.name = $"Slot_{i + 1:00}";
-            slot.SetEmpty();
-            int slotIndex = i;
-            slot.Clicked += () => HandleSlotClicked(slotIndex);
-            slot.DragStarted += () => HandleSlotDragStarted(slotIndex);
-            slot.DragMoved += HandleSlotDragged;
-            slot.DragEnded += HandleSlotDragEnded;
-            slot.Dropped += draggedSlot => HandleSlotDropped(draggedSlot, slotIndex);
+            InventorySlotVisual slot = CreateSlotVisual(i);
             slotVisuals.Add(slot);
-            slotIndices[slot] = slotIndex;
+            slotIndices[slot] = i;
         }
 
         RefreshSelectionState();
@@ -152,7 +150,7 @@ public class InventoryUIController : MonoBehaviour
     {
         ResolveInventorySystem();
 
-        if (inventorySystem == null || !slotIndices.TryGetValue(draggedSlot, out int sourceSlotIndex))
+        if (inventorySystem == null || !TryResolveSourceSlotIndex(draggedSlot, out int sourceSlotIndex))
             return;
 
         if (sourceSlotIndex == targetSlotIndex)
@@ -186,6 +184,44 @@ public class InventoryUIController : MonoBehaviour
             if (canvas != null)
                 dragPreviewCanvas = canvas.rootCanvas;
         }
+    }
+
+    // Quando a janela acorda depois de ter ficado desativada, ela precisa puxar o estado atual
+    // do inventario para nao sobrescrever a UI com slots vazios reconstruidos no Awake.
+    private void SyncFromInventorySystem()
+    {
+        ResolveInventorySystem();
+
+        if (inventorySystem == null)
+            return;
+
+        Refresh(inventorySystem.Slots);
+        SetSelectedSlot(inventorySystem.SelectedSlotIndex);
+    }
+
+    private InventorySlotVisual CreateSlotVisual(int slotIndex)
+    {
+        InventorySlotVisual slot = Instantiate(slotPrefab, slotsParent);
+        slot.name = $"Slot_{slotIndex + 1:00}";
+        slot.SetEmpty();
+        BindSlotEvents(slot, slotIndex);
+        return slot;
+    }
+
+    // Centraliza o bind dos eventos para deixar claro qual acao cada interacao dispara.
+    private void BindSlotEvents(InventorySlotVisual slot, int slotIndex)
+    {
+        slot.Clicked += () => HandleSlotClicked(slotIndex);
+        slot.DragStarted += () => HandleSlotDragStarted(slotIndex);
+        slot.DragMoved += HandleSlotDragged;
+        slot.DragEnded += HandleSlotDragEnded;
+        slot.Dropped += draggedSlot => HandleSlotDropped(draggedSlot, slotIndex);
+    }
+
+    private bool TryResolveSourceSlotIndex(InventorySlotVisual draggedSlot, out int slotIndex)
+    {
+        slotIndex = -1;
+        return draggedSlot != null && slotIndices.TryGetValue(draggedSlot, out slotIndex);
     }
 
     private void ShowDragPreview(InventorySlotVisual sourceSlot)

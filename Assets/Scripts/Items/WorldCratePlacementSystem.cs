@@ -25,7 +25,6 @@ public class WorldCratePlacementSystem : MonoBehaviour
 
     private Mouse mouse;
     private Transform placementOrigin;
-    private GameObject ghostRoot;
     private SpriteRenderer ghostRenderer;
     private DroppedItemVisual sharedDropPrefab;
     private readonly Collider2D[] placementOverlapResults = new Collider2D[8];
@@ -60,8 +59,7 @@ public class WorldCratePlacementSystem : MonoBehaviour
     {
         mouse ??= Mouse.current;
 
-        if (HasMissingReferences() && Time.unscaledTime >= nextReferenceResolveTime)
-            ResolveReferences();
+        TryRefreshMissingReferences();
 
         if (mouse == null || inventorySystem == null || IsPointerInputBlocked())
         {
@@ -76,7 +74,7 @@ public class WorldCratePlacementSystem : MonoBehaviour
             return;
         }
 
-        if (keyboardRWasPressed())
+        if (WasMirrorKeyPressed())
             TogglePlacementMirror();
 
         Vector3 placementPosition = ResolvePlacementPosition();
@@ -86,6 +84,13 @@ public class WorldCratePlacementSystem : MonoBehaviour
 
         if (canPlace && mouse.leftButton.wasPressedThisFrame)
             TryPlaceCrate(selectedItem, placementPosition);
+    }
+
+    // Evita procurar referencias todo frame quando a cena ainda esta terminando de montar.
+    private void TryRefreshMissingReferences()
+    {
+        if (HasMissingReferences() && Time.unscaledTime >= nextReferenceResolveTime)
+            ResolveReferences();
     }
 
     private bool TryPlaceCrate(ItemData selectedItem, Vector3 placementPosition)
@@ -184,6 +189,7 @@ public class WorldCratePlacementSystem : MonoBehaviour
 
     private void ResolveReferences()
     {
+        // Se a cena ainda estiver montando, basta tentar de novo mais tarde sem ficar vasculhando tudo em loop.
         nextReferenceResolveTime = Time.unscaledTime + ReferenceResolveRetryInterval;
 
         inventorySystem ??= FindFirstObjectByType<InventorySystem>();
@@ -240,9 +246,9 @@ public class WorldCratePlacementSystem : MonoBehaviour
         if (ghostRenderer != null)
             return;
 
-        ghostRoot = new GameObject("CratePlacementGhost");
-        ghostRoot.transform.SetParent(transform, false);
-        ghostRenderer = ghostRoot.AddComponent<SpriteRenderer>();
+        GameObject ghostObject = new("CratePlacementGhost");
+        ghostObject.transform.SetParent(transform, false);
+        ghostRenderer = ghostObject.AddComponent<SpriteRenderer>();
         ghostRenderer.sortingLayerName = sortingLayerName;
         ghostRenderer.sortingOrder = sortingOrder;
         ghostRenderer.color = validTint;
@@ -294,7 +300,7 @@ public class WorldCratePlacementSystem : MonoBehaviour
             ghostRenderer.flipX = mirrorPlacementSprite;
     }
 
-    private bool keyboardRWasPressed()
+    private bool WasMirrorKeyPressed()
     {
         Keyboard keyboard = Keyboard.current;
         return keyboard != null && keyboard.rKey.wasPressedThisFrame;

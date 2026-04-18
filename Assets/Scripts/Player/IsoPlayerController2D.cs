@@ -90,32 +90,10 @@ public class IsoPlayerController2D : MonoBehaviour
     {
         sprintHeld = sprintAction != null && sprintAction.IsPressed();
 
-        Vector2 v = inputRaw;
-        if (v.sqrMagnitude < deadzone * deadzone)
-            v = Vector2.zero;
-
-        animDir = new Vector2(
-            Mathf.Approximately(v.x, 0f) ? 0f : Mathf.Sign(v.x),
-            Mathf.Approximately(v.y, 0f) ? 0f : Mathf.Sign(v.y)
-        );
-
+        animDir = ResolveAnimationDirection(inputRaw);
         isMoving = animDir != Vector2.zero;
-
-        Vector2 moveBase = animDir;
-        if (alignToIsoTiles && isMoving)
-            moveBase = new Vector2(animDir.x, animDir.y * isoYScale);
-
-        moveDir = isMoving ? moveBase.normalized : Vector2.zero;
-
-        if (animator != null)
-        {
-            SetAnimatorFloatIfChanged(MoveXHash, animDir.x, ref cachedMoveX);
-            SetAnimatorFloatIfChanged(MoveYHash, animDir.y, ref cachedMoveY);
-            SetAnimatorFloatIfChanged(SpeedHash, isMoving ? 1f : 0f, ref cachedSpeed);
-
-            if (hasIsSprintingParam)
-                SetAnimatorBoolIfChanged(IsSprintingHash, sprintHeld && isMoving);
-        }
+        moveDir = ResolveMovementDirection(animDir);
+        UpdateAnimatorState();
 
         UpdateLastMove();
     }
@@ -175,6 +153,42 @@ public class IsoPlayerController2D : MonoBehaviour
     private static bool IsDiagonal(Vector2 dir)
     {
         return Mathf.Abs(dir.x) > 0.5f && Mathf.Abs(dir.y) > 0.5f;
+    }
+
+    private Vector2 ResolveAnimationDirection(Vector2 rawInput)
+    {
+        Vector2 filteredInput = rawInput;
+        if (filteredInput.sqrMagnitude < deadzone * deadzone)
+            filteredInput = Vector2.zero;
+
+        return new Vector2(
+            Mathf.Approximately(filteredInput.x, 0f) ? 0f : Mathf.Sign(filteredInput.x),
+            Mathf.Approximately(filteredInput.y, 0f) ? 0f : Mathf.Sign(filteredInput.y));
+    }
+
+    private Vector2 ResolveMovementDirection(Vector2 animationDirection)
+    {
+        if (animationDirection == Vector2.zero)
+            return Vector2.zero;
+
+        Vector2 moveBase = animationDirection;
+        if (alignToIsoTiles)
+            moveBase = new Vector2(animationDirection.x, animationDirection.y * isoYScale);
+
+        return moveBase.normalized;
+    }
+
+    private void UpdateAnimatorState()
+    {
+        if (animator == null)
+            return;
+
+        SetAnimatorFloatIfChanged(MoveXHash, animDir.x, ref cachedMoveX);
+        SetAnimatorFloatIfChanged(MoveYHash, animDir.y, ref cachedMoveY);
+        SetAnimatorFloatIfChanged(SpeedHash, isMoving ? 1f : 0f, ref cachedSpeed);
+
+        if (hasIsSprintingParam)
+            SetAnimatorBoolIfChanged(IsSprintingHash, sprintHeld && isMoving);
     }
 
     private void ClearPending()

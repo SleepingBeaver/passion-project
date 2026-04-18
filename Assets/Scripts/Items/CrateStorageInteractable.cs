@@ -120,38 +120,9 @@ public class CrateStorageInteractable : WorldInteractable
 
         int requestedAmount = amount;
         int remaining = amount;
-        bool changed = false;
-        int maxStack = itemData.isUnique ? 1 : Mathf.Max(1, itemData.maxStack);
-
-        for (int i = 0; i < slots.Count && remaining > 0; i++)
-        {
-            InventorySlotData slot = slots[i];
-
-            if (slot.IsEmpty || slot.item != itemData)
-                continue;
-
-            int spaceLeft = maxStack - slot.amount;
-            if (spaceLeft <= 0)
-                continue;
-
-            int amountToAdd = Mathf.Min(spaceLeft, remaining);
-            slot.amount += amountToAdd;
-            remaining -= amountToAdd;
-            changed = true;
-        }
-
-        for (int i = 0; i < slots.Count && remaining > 0; i++)
-        {
-            InventorySlotData slot = slots[i];
-
-            if (!slot.IsEmpty)
-                continue;
-
-            int amountToAdd = Mathf.Min(maxStack, remaining);
-            slot.SetItem(itemData, amountToAdd);
-            remaining -= amountToAdd;
-            changed = true;
-        }
+        int maxStack = ResolveMaxStackSize(itemData);
+        bool changed = TryFillExistingStacks(itemData, maxStack, ref remaining);
+        changed |= TryFillEmptySlots(itemData, maxStack, ref remaining);
 
         if (changed)
             NotifyStorageChanged();
@@ -399,10 +370,7 @@ public class CrateStorageInteractable : WorldInteractable
         if (fromSlot == null || toSlot == null || fromSlot.IsEmpty || toSlot.IsEmpty || fromSlot.item != toSlot.item)
             return false;
 
-        int maxStack = fromSlot.item != null && fromSlot.item.isUnique
-            ? 1
-            : Mathf.Max(1, toSlot.item.maxStack);
-
+        int maxStack = ResolveMaxStackSize(toSlot.item);
         int spaceLeft = Mathf.Max(0, maxStack - toSlot.amount);
         if (spaceLeft <= 0)
             return false;
@@ -434,6 +402,51 @@ public class CrateStorageInteractable : WorldInteractable
         StorageChanged?.Invoke();
     }
 
+    // Mantem o armazenamento compacto antes de expandir para slots vazios.
+    private bool TryFillExistingStacks(ItemData itemData, int maxStack, ref int remaining)
+    {
+        bool changed = false;
+
+        for (int i = 0; i < slots.Count && remaining > 0; i++)
+        {
+            InventorySlotData slot = slots[i];
+
+            if (slot.IsEmpty || slot.item != itemData)
+                continue;
+
+            int spaceLeft = maxStack - slot.amount;
+            if (spaceLeft <= 0)
+                continue;
+
+            int amountToAdd = Mathf.Min(spaceLeft, remaining);
+            slot.amount += amountToAdd;
+            remaining -= amountToAdd;
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private bool TryFillEmptySlots(ItemData itemData, int maxStack, ref int remaining)
+    {
+        bool changed = false;
+
+        for (int i = 0; i < slots.Count && remaining > 0; i++)
+        {
+            InventorySlotData slot = slots[i];
+
+            if (!slot.IsEmpty)
+                continue;
+
+            int amountToAdd = Mathf.Min(maxStack, remaining);
+            slot.SetItem(itemData, amountToAdd);
+            remaining -= amountToAdd;
+            changed = true;
+        }
+
+        return changed;
+    }
+
     private BoxCollider2D EnsureInteractionTrigger()
     {
         Transform interactionZone = transform.Find("InteractionZone");
@@ -461,5 +474,13 @@ public class CrateStorageInteractable : WorldInteractable
             component = target.AddComponent<T>();
 
         return component;
+    }
+
+    private static int ResolveMaxStackSize(ItemData itemData)
+    {
+        if (itemData == null)
+            return 0;
+
+        return itemData.isUnique ? 1 : Mathf.Max(1, itemData.maxStack);
     }
 }

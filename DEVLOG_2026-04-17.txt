@@ -1,0 +1,38 @@
+DEVLOG - 2026-04-17
+
+Resumo
+Hoje o foco foi melhorar a manutencao do projeto e corrigir pequenos pontos de usabilidade no fluxo de UI. O trabalho passou principalmente pelo pause menu, pela legibilidade dos scripts centrais de inventario/interacao e por uma correcao no carregamento inicial dos itens do inventario.
+
+Principais entregas
+1. Pause Menu
+- Refactor do script PauseMenuUI para deixar a leitura mais clara e separar melhor as responsabilidades.
+- Criado fluxo de preview no editor para visualizar tanto o menu principal quanto a aba de opcoes sem depender de Play Mode.
+- Adicionado um Custom Editor com botoes de preview direto no Inspector.
+
+2. Limpeza e legibilidade dos scripts
+- Melhor organizacao dos fluxos de inventario, hotbar, interacao do jogador e placement de caixotes.
+- Extracao de helpers para reduzir repeticao e deixar a intencao dos metodos mais clara.
+- Comentarios adicionados nos pontos em que o comportamento nao era tao obvio em uma leitura rapida.
+
+3. Correcao do inventario ao iniciar o jogo
+- Corrigido o problema em que os itens iniciais nao apareciam visualmente na UI do inventario ate serem movidos.
+- O InventoryUIController agora sincroniza com o estado atual do InventorySystem ao construir os slots e tambem quando a interface e ativada.
+
+Arquivos de destaque
+- Assets/Scripts/UI/PauseMenuUI.cs
+- Assets/Editor/PauseMenuUIEditor.cs
+- Assets/Scripts/UI/InventoryUIController.cs
+- Assets/Scripts/UI/InventorySystem.cs
+- Assets/Scripts/UI/UIInventoryBar.cs
+- Assets/Scripts/UI/InventorySlotVisual.cs
+- Assets/Scripts/Player/PlayerInteractor.cs
+- Assets/Scripts/Player/IsoPlayerController2D.cs
+- Assets/Scripts/Items/CrateStorageInteractable.cs
+- Assets/Scripts/Items/WorldCratePlacementSystem.cs
+
+Validacao
+- Build de runtime executada com sucesso.
+- Build da assembly de editor executada com sucesso.
+
+Observacao
+As mudancas foram feitas buscando manter o comportamento atual do projeto, priorizando clareza, manutencao futura e seguranca para continuar iterando nas interfaces.

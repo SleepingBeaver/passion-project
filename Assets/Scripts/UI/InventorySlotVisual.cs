@@ -86,6 +86,7 @@ public class InventorySlotVisual : MonoBehaviour, IPointerClickHandler, IBeginDr
 
     private void LateUpdate()
     {
+        // Quando o slot muda de tamanho, a gente recalcula o icone uma vez e segue a vida.
         if (!iconLayoutDirty || !HasItem || itemIcon == null || itemIconRectTransform == null)
             return;
 
@@ -260,35 +261,21 @@ public class InventorySlotVisual : MonoBehaviour, IPointerClickHandler, IBeginDr
         canvasGroup.blocksRaycasts = !dragging;
     }
 
-    private float GetCurrentIconScale()
-    {
-        return GetItemIconScale(displayedItem);
-    }
-
     // Retorna o tamanho atual do slot onde o item esta sendo desenhado,
     // permitindo que o mesmo item se adapte a hotbar, inventario e bau.
     public Vector2 GetCurrentSlotSize()
     {
-        if (slotRectTransform != null)
-        {
-            Vector2 rectSize = slotRectTransform.rect.size;
-            if (rectSize.x > 0.01f && rectSize.y > 0.01f)
-                return rectSize;
-        }
+        if (TryReadRectSize(slotRectTransform, out Vector2 slotSize))
+            return slotSize;
 
-        if (backgroundImage != null)
-        {
-            RectTransform backgroundRect = backgroundImage.rectTransform;
-            Vector2 rectSize = backgroundRect.rect.size;
-            if (rectSize.x > 0.01f && rectSize.y > 0.01f)
-                return rectSize;
-        }
+        if (backgroundImage != null && TryReadRectSize(backgroundImage.rectTransform, out Vector2 backgroundSize))
+            return backgroundSize;
 
-        if (itemIconRectTransform != null && itemIconRectTransform.parent is RectTransform parentRect)
+        if (itemIconRectTransform != null &&
+            itemIconRectTransform.parent is RectTransform parentRect &&
+            TryReadRectSize(parentRect, out Vector2 parentSize))
         {
-            Vector2 rectSize = parentRect.rect.size;
-            if (rectSize.x > 0.01f && rectSize.y > 0.01f)
-                return rectSize;
+            return parentSize;
         }
 
         return Vector2.zero;
@@ -363,6 +350,17 @@ public class InventorySlotVisual : MonoBehaviour, IPointerClickHandler, IBeginDr
             return 1f;
 
         return Mathf.Max(0.1f, itemData.inventoryIconScale);
+    }
+
+    private static bool TryReadRectSize(RectTransform rectTransform, out Vector2 size)
+    {
+        size = Vector2.zero;
+
+        if (rectTransform == null)
+            return false;
+
+        size = rectTransform.rect.size;
+        return size.x > 0.01f && size.y > 0.01f;
     }
 
     private static T GetOrAddComponent<T>(GameObject target) where T : Component

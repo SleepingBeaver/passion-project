@@ -242,38 +242,9 @@ public class InventorySystem : MonoBehaviour
 
         int requestedAmount = amount;
         int remaining = amount;
-        bool changed = false;
-        int maxStack = itemData.isUnique ? 1 : Mathf.Max(1, itemData.maxStack);
-
-        for (int i = 0; i < slots.Count && remaining > 0; i++)
-        {
-            InventorySlotData slot = slots[i];
-
-            if (slot.IsEmpty || slot.item != itemData)
-                continue;
-
-            int spaceLeft = maxStack - slot.amount;
-            if (spaceLeft <= 0)
-                continue;
-
-            int amountToAdd = Mathf.Min(spaceLeft, remaining);
-            slot.amount += amountToAdd;
-            remaining -= amountToAdd;
-            changed = true;
-        }
-
-        for (int i = 0; i < slots.Count && remaining > 0; i++)
-        {
-            InventorySlotData slot = slots[i];
-
-            if (!slot.IsEmpty)
-                continue;
-
-            int amountToAdd = Mathf.Min(maxStack, remaining);
-            slot.SetItem(itemData, amountToAdd);
-            remaining -= amountToAdd;
-            changed = true;
-        }
+        int maxStack = ResolveMaxStackSize(itemData);
+        bool changed = TryFillExistingStacks(itemData, maxStack, ref remaining);
+        changed |= TryFillEmptySlots(itemData, maxStack, ref remaining);
 
         if (changed && refreshUI)
             RefreshUI();
@@ -315,6 +286,52 @@ public class InventorySystem : MonoBehaviour
         return slotIndex >= 0 && slotIndex < slots.Count;
     }
 
+    // Primeiro tenta completar pilhas existentes para reduzir fragmentacao.
+    private bool TryFillExistingStacks(ItemData itemData, int maxStack, ref int remaining)
+    {
+        bool changed = false;
+
+        for (int i = 0; i < slots.Count && remaining > 0; i++)
+        {
+            InventorySlotData slot = slots[i];
+
+            if (slot.IsEmpty || slot.item != itemData)
+                continue;
+
+            int spaceLeft = maxStack - slot.amount;
+            if (spaceLeft <= 0)
+                continue;
+
+            int amountToAdd = Mathf.Min(spaceLeft, remaining);
+            slot.amount += amountToAdd;
+            remaining -= amountToAdd;
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    // So depois disso a gente ocupa slots vazios.
+    private bool TryFillEmptySlots(ItemData itemData, int maxStack, ref int remaining)
+    {
+        bool changed = false;
+
+        for (int i = 0; i < slots.Count && remaining > 0; i++)
+        {
+            InventorySlotData slot = slots[i];
+
+            if (!slot.IsEmpty)
+                continue;
+
+            int amountToAdd = Mathf.Min(maxStack, remaining);
+            slot.SetItem(itemData, amountToAdd);
+            remaining -= amountToAdd;
+            changed = true;
+        }
+
+        return changed;
+    }
+
     private bool TryMergeSlots(InventorySlotData fromSlot, InventorySlotData toSlot)
     {
         if (fromSlot == null || toSlot == null)
@@ -323,10 +340,7 @@ public class InventorySystem : MonoBehaviour
         if (fromSlot.IsEmpty || toSlot.IsEmpty || fromSlot.item != toSlot.item)
             return false;
 
-        int maxStack = fromSlot.item != null && fromSlot.item.isUnique
-            ? 1
-            : Mathf.Max(1, toSlot.item.maxStack);
-
+        int maxStack = ResolveMaxStackSize(toSlot.item);
         int spaceLeft = Mathf.Max(0, maxStack - toSlot.amount);
         if (spaceLeft <= 0)
             return false;
@@ -356,5 +370,13 @@ public class InventorySystem : MonoBehaviour
     private void NotifySelectionChanged()
     {
         SelectionChanged?.Invoke(selectedSlotIndex, SelectedSlot);
+    }
+
+    private static int ResolveMaxStackSize(ItemData itemData)
+    {
+        if (itemData == null)
+            return 0;
+
+        return itemData.isUnique ? 1 : Mathf.Max(1, itemData.maxStack);
     }
 }

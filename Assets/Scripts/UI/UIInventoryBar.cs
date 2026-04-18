@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -34,7 +35,7 @@ public class UIInventoryBar : MonoBehaviour
 
     // Estado interno da barra e componentes auxiliares.
     private readonly List<InventorySlotVisual> slotVisuals = new();
-    private readonly List<InventorySlotData> inventory = new();
+    private IReadOnlyList<InventorySlotData> inventory = Array.Empty<InventorySlotData>();
     private readonly Dictionary<InventorySlotVisual, int> slotVisualIndices = new();
 
     private Button upButton;
@@ -88,12 +89,25 @@ public class UIInventoryBar : MonoBehaviour
         if (keyboard == null)
             return;
 
-        if (GetMaxRowIndex() > 0 && keyboard.upArrowKey.wasPressedThisFrame)
-            PreviousRow(triggerFeedback: true);
+        int maxRowIndex = GetMaxRowIndex();
+        HandleRowNavigationInput(maxRowIndex);
+        HandleNumericSelectionInput();
+    }
 
-        if (GetMaxRowIndex() > 0 && keyboard.downArrowKey.wasPressedThisFrame)
+    private void HandleRowNavigationInput(int maxRowIndex)
+    {
+        if (maxRowIndex <= 0)
+            return;
+
+        if (keyboard.downArrowKey.wasPressedThisFrame)
             NextRow(triggerFeedback: true);
 
+        if (keyboard.upArrowKey.wasPressedThisFrame)
+            PreviousRow(triggerFeedback: true);
+    }
+
+    private void HandleNumericSelectionInput()
+    {
         int visibleSlotIndex = ResolveNumericSelectionInput();
         if (visibleSlotIndex >= 0)
             SelectVisibleSlot(visibleSlotIndex);
@@ -102,10 +116,8 @@ public class UIInventoryBar : MonoBehaviour
     // API publica para alimentar a barra e navegar entre linhas.
     public void SetInventory(IReadOnlyList<InventorySlotData> items)
     {
-        inventory.Clear();
-
-        if (items != null)
-            inventory.AddRange(items);
+        // A hotbar so aponta para o inventario atual. Assim a gente evita copiar tudo a cada refresh.
+        inventory = items ?? Array.Empty<InventorySlotData>();
 
         RebuildSlotsIfNeeded();
         RefreshVisibleRow();
@@ -136,12 +148,12 @@ public class UIInventoryBar : MonoBehaviour
     }
 
     // Sincronizacao com o InventorySystem.
-    private void HandleInventoryChanged(IReadOnlyList<InventorySlotData> slots)
+    private void HandleInventoryChanged(IReadOnlyList<InventorySlotData> _)
     {
-        SetInventory(slots);
+        SetInventory(inventorySystem != null ? inventorySystem.Slots : null);
     }
 
-    private void HandleSelectionChanged(int slotIndex, InventorySlotData slotData)
+    private void HandleSelectionChanged(int slotIndex, InventorySlotData _)
     {
         selectedSlotIndex = slotIndex;
 
@@ -296,7 +308,6 @@ public class UIInventoryBar : MonoBehaviour
             return;
 
         ClearSlots();
-        slotVisualIndices.Clear();
 
         for (int i = 0; i < requiredSlotCount; i++)
         {
@@ -325,7 +336,6 @@ public class UIInventoryBar : MonoBehaviour
         for (int i = slotsRoot.childCount - 1; i >= 0; i--)
         {
             GameObject child = slotsRoot.GetChild(i).gameObject;
-            child.SetActive(false);
             Destroy(child);
         }
     }
@@ -374,8 +384,12 @@ public class UIInventoryBar : MonoBehaviour
         if (image == null)
             return;
 
-        image.sprite = normalSprite;
-        image.color = new Color(1f, 1f, 1f, isInteractable ? 1f : disabledButtonAlpha);
+        if (image.sprite != normalSprite)
+            image.sprite = normalSprite;
+
+        Color targetColor = new Color(1f, 1f, 1f, isInteractable ? 1f : disabledButtonAlpha);
+        if (image.color != targetColor)
+            image.color = targetColor;
     }
 
     // Navegacao e feedback da barra.

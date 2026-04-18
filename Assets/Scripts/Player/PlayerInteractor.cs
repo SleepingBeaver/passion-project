@@ -109,6 +109,25 @@ public class PlayerInteractor : MonoBehaviour
     // Fluxo de escolha e execucao da interacao atual.
     private void UpdateCurrentInteractable()
     {
+        WorldInteractable best = ResolveBestInteractable();
+
+        if (best == currentInteractable)
+            return;
+
+        if (currentInteractable != null)
+            currentInteractable.OnFocusExit(this);
+
+        currentInteractable = best;
+        CancelHold();
+
+        if (currentInteractable != null)
+            currentInteractable.OnFocusEnter(this);
+    }
+
+    // Prioriza o alvo mais proximo que possa ser usado agora; se nada estiver utilizavel,
+    // ainda escolhemos o melhor fallback para manter o prompt contextual visivel.
+    private WorldInteractable ResolveBestInteractable()
+    {
         WorldInteractable bestAvailable = null;
         WorldInteractable bestFallback = null;
         float bestAvailableDistanceSqr = float.MaxValue;
@@ -140,19 +159,7 @@ public class PlayerInteractor : MonoBehaviour
             }
         }
 
-        WorldInteractable best = bestAvailable != null ? bestAvailable : bestFallback;
-
-        if (best == currentInteractable)
-            return;
-
-        if (currentInteractable != null)
-            currentInteractable.OnFocusExit(this);
-
-        currentInteractable = best;
-        CancelHold();
-
-        if (currentInteractable != null)
-            currentInteractable.OnFocusEnter(this);
+        return bestAvailable != null ? bestAvailable : bestFallback;
     }
 
     private void HandleInteractionInput()
@@ -162,12 +169,7 @@ public class PlayerInteractor : MonoBehaviour
 
         if (!currentInteractable.CanInteract(this))
         {
-            if (holdInProgress)
-            {
-                currentInteractable.OnHoldCanceled(this);
-                CancelHold();
-            }
-
+            CancelHoldBecauseInteractionBecameInvalid();
             return;
         }
 
@@ -180,6 +182,15 @@ public class PlayerInteractor : MonoBehaviour
             if (keyboard.eKey.wasPressedThisFrame)
                 currentInteractable.TryInteract(this);
         }
+    }
+
+    private void CancelHoldBecauseInteractionBecameInvalid()
+    {
+        if (!holdInProgress)
+            return;
+
+        currentInteractable.OnHoldCanceled(this);
+        CancelHold();
     }
 
     private void HandleHoldInteraction()

@@ -167,13 +167,8 @@ public class SimpleInventoryUI : MonoBehaviour
         AcquireModalLock();
         PlayUIClip(openClip, openVolume);
 
-        dimBackgroundCanvasGroup.alpha = 0f;
-        dimBackgroundCanvasGroup.interactable = false;
-        dimBackgroundCanvasGroup.blocksRaycasts = false;
-
-        inventoryPanelCanvasGroup.alpha = 0f;
-        inventoryPanelCanvasGroup.interactable = false;
-        inventoryPanelCanvasGroup.blocksRaycasts = false;
+        ApplyCanvasGroupState(dimBackgroundCanvasGroup, 0f, interactable: false);
+        ApplyCanvasGroupState(inventoryPanelCanvasGroup, 0f, interactable: false);
         inventoryPanelRect.localScale = Vector3.one * panelStartScale;
 
         float totalDuration = Mathf.Max(backgroundFadeDuration, panelFadeDuration);
@@ -197,10 +192,7 @@ public class SimpleInventoryUI : MonoBehaviour
         }
 
         dimBackgroundCanvasGroup.alpha = backgroundMaxAlpha;
-
-        inventoryPanelCanvasGroup.alpha = 1f;
-        inventoryPanelCanvasGroup.interactable = true;
-        inventoryPanelCanvasGroup.blocksRaycasts = true;
+        ApplyCanvasGroupState(inventoryPanelCanvasGroup, 1f, interactable: true);
         inventoryPanelRect.localScale = Vector3.one * panelEndScale;
 
         isTransitioning = false;
@@ -213,8 +205,7 @@ public class SimpleInventoryUI : MonoBehaviour
 
         PlayUIClip(closeClip, closeVolume);
 
-        inventoryPanelCanvasGroup.interactable = false;
-        inventoryPanelCanvasGroup.blocksRaycasts = false;
+        ApplyCanvasGroupState(inventoryPanelCanvasGroup, inventoryPanelCanvasGroup.alpha, interactable: false);
 
         float totalDuration = Mathf.Max(backgroundFadeDuration, panelFadeDuration);
         float elapsed = 0f;
@@ -245,13 +236,8 @@ public class SimpleInventoryUI : MonoBehaviour
     {
         bool wasInventoryOpen = isOpen;
 
-        dimBackgroundCanvasGroup.alpha = 0f;
-        dimBackgroundCanvasGroup.interactable = false;
-        dimBackgroundCanvasGroup.blocksRaycasts = false;
-
-        inventoryPanelCanvasGroup.alpha = 0f;
-        inventoryPanelCanvasGroup.interactable = false;
-        inventoryPanelCanvasGroup.blocksRaycasts = false;
+        ApplyCanvasGroupState(dimBackgroundCanvasGroup, 0f, interactable: false);
+        ApplyCanvasGroupState(inventoryPanelCanvasGroup, 0f, interactable: false);
 
         inventoryPanelRect.localScale = Vector3.one * panelStartScale;
         inventoryUIRoot.SetActive(false);
@@ -269,6 +255,16 @@ public class SimpleInventoryUI : MonoBehaviour
     {
         if (playerMovementBehaviour != null)
             playerMovementBehaviour.enabled = value;
+    }
+
+    private static void ApplyCanvasGroupState(CanvasGroup canvasGroup, float alpha, bool interactable)
+    {
+        if (canvasGroup == null)
+            return;
+
+        canvasGroup.alpha = alpha;
+        canvasGroup.interactable = interactable;
+        canvasGroup.blocksRaycasts = interactable;
     }
 
     private void PlayUIClip(AudioClip clip, float volume)

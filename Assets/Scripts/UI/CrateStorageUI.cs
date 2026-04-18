@@ -249,7 +249,7 @@ public class CrateStorageUI : MonoBehaviour
         simpleInventoryUI = null;
     }
 
-    private void HandleInventoryChanged(IReadOnlyList<InventorySlotData> slots)
+    private void HandleInventoryChanged(IReadOnlyList<InventorySlotData> _)
     {
         RefreshPlayerSlots();
     }
@@ -499,14 +499,9 @@ public class CrateStorageUI : MonoBehaviour
     {
         string crateName = activeCrate != null ? activeCrate.DisplayName : "Caixote";
 
-        if (titleText != null)
-            titleText.text = crateName;
-
-        if (playerSectionTitleText != null)
-            playerSectionTitleText.text = "Inventario";
-
-        if (crateSectionTitleText != null)
-            crateSectionTitleText.text = crateName;
+        SetTextIfChanged(titleText, crateName);
+        SetTextIfChanged(playerSectionTitleText, "Inventario");
+        SetTextIfChanged(crateSectionTitleText, crateName);
     }
 
     private void BuildPlayerSlotsIfNeeded()
@@ -633,12 +628,19 @@ public class CrateStorageUI : MonoBehaviour
 
     private void SetHint(string text)
     {
-        if (hintText != null)
+        if (hintText != null && hintText.text != text)
             hintText.text = text;
     }
 
-    private static void ClearSlotVisuals(List<InventorySlotVisual> slotVisuals, RectTransform root)
+    private void ClearSlotVisuals(List<InventorySlotVisual> slotVisuals, RectTransform root)
     {
+        // Aqui vale limpar os bindings junto para nao carregar referencia de slot que ja foi destruido.
+        for (int i = 0; i < slotVisuals.Count; i++)
+        {
+            if (slotVisuals[i] != null)
+                slotBindings.Remove(slotVisuals[i]);
+        }
+
         slotVisuals.Clear();
 
         if (root == null)
@@ -646,6 +648,12 @@ public class CrateStorageUI : MonoBehaviour
 
         for (int i = root.childCount - 1; i >= 0; i--)
             Destroy(root.GetChild(i).gameObject);
+    }
+
+    private static void SetTextIfChanged(TMP_Text text, string value)
+    {
+        if (text != null && text.text != value)
+            text.text = value;
     }
 
     private static RectTransform CreateSection(RectTransform parent, string name, Vector2 anchoredPosition, Vector2 size)
