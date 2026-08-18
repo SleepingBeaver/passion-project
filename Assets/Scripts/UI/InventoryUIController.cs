@@ -17,13 +17,23 @@ public class InventoryUIController : MonoBehaviour
     private readonly List<InventorySlotVisual> slotVisuals = new();
     private readonly Dictionary<InventorySlotVisual, int> slotIndices = new();
     private int selectedSlotIndex = -1;
+    private int cachedSlotsPerRow;
     private RectTransform dragPreviewRect;
     private Image dragPreviewImage;
     private CanvasGroup dragPreviewCanvasGroup;
 
     // Leitura publica usada pelo sistema de inventario.
     public int SlotCount => slotCount;
-    public int SlotsPerRow => ResolveSlotsPerRow();
+    public int SlotsPerRow
+    {
+        get
+        {
+            if (cachedSlotsPerRow <= 0)
+                cachedSlotsPerRow = ResolveSlotsPerRow();
+
+            return cachedSlotsPerRow;
+        }
+    }
     public InventorySlotVisual SlotPrefab => slotPrefab;
 
     // Ciclo de vida.
@@ -32,7 +42,6 @@ public class InventoryUIController : MonoBehaviour
         ResolveInventorySystem();
         ResolveDragPreviewCanvas();
         BuildSlots();
-        SyncFromInventorySystem();
     }
 
     private void OnEnable()
@@ -43,6 +52,11 @@ public class InventoryUIController : MonoBehaviour
     private void OnDisable()
     {
         ClearDragPreview();
+    }
+
+    private void OnValidate()
+    {
+        cachedSlotsPerRow = 0;
     }
 
     // Montagem e atualizacao da interface.
@@ -80,8 +94,6 @@ public class InventoryUIController : MonoBehaviour
             else
                 slotVisuals[i].SetEmpty();
         }
-
-        RefreshSelectionState();
     }
 
     public void SetSelectedSlot(int slotIndex)
@@ -170,7 +182,7 @@ public class InventoryUIController : MonoBehaviour
     private void ResolveInventorySystem()
     {
         if (inventorySystem == null)
-            inventorySystem = FindFirstObjectByType<InventorySystem>();
+            inventorySystem = FindAnyObjectByType<InventorySystem>();
     }
 
     private void ResolveDragPreviewCanvas()

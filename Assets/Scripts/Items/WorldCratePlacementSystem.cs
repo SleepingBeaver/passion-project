@@ -24,17 +24,21 @@ public class WorldCratePlacementSystem : MonoBehaviour
     [SerializeField] private int sortingOrder;
 
     private Mouse mouse;
+    private Keyboard keyboard;
     private Transform placementOrigin;
     private SpriteRenderer ghostRenderer;
     private DroppedItemVisual sharedDropPrefab;
     private readonly Collider2D[] placementOverlapResults = new Collider2D[8];
     private ContactFilter2D placementContactFilter;
     private float nextReferenceResolveTime;
+    private float maxPlacementDistanceSqr;
     private bool mirrorPlacementSprite;
 
     private void Awake()
     {
         mouse = Mouse.current;
+        keyboard = Keyboard.current;
+        CachePlacementDistance();
         ConfigurePlacementContactFilter();
         ResolveReferences();
         EnsureGhost();
@@ -44,6 +48,8 @@ public class WorldCratePlacementSystem : MonoBehaviour
     private void OnEnable()
     {
         mouse = Mouse.current;
+        keyboard = Keyboard.current;
+        CachePlacementDistance();
         ConfigurePlacementContactFilter();
         ResolveReferences();
         EnsureGhost();
@@ -55,9 +61,15 @@ public class WorldCratePlacementSystem : MonoBehaviour
         HideGhost();
     }
 
+    private void OnValidate()
+    {
+        CachePlacementDistance();
+    }
+
     private void Update()
     {
         mouse ??= Mouse.current;
+        keyboard ??= Keyboard.current;
 
         TryRefreshMissingReferences();
 
@@ -183,8 +195,7 @@ public class WorldCratePlacementSystem : MonoBehaviour
 
         Vector2 origin = placementOrigin.position;
         Vector2 target = placementPosition;
-        float maxDistanceSqr = maxPlacementDistance * maxPlacementDistance;
-        return (target - origin).sqrMagnitude <= maxDistanceSqr;
+        return (target - origin).sqrMagnitude <= maxPlacementDistanceSqr;
     }
 
     private void ResolveReferences()
@@ -192,21 +203,27 @@ public class WorldCratePlacementSystem : MonoBehaviour
         // Se a cena ainda estiver montando, basta tentar de novo mais tarde sem ficar vasculhando tudo em loop.
         nextReferenceResolveTime = Time.unscaledTime + ReferenceResolveRetryInterval;
 
-        inventorySystem ??= FindFirstObjectByType<InventorySystem>();
-        worldCamera ??= Camera.main != null ? Camera.main : FindFirstObjectByType<Camera>();
-        targetGrid ??= FindFirstObjectByType<Grid>();
+        inventorySystem ??= FindAnyObjectByType<InventorySystem>();
+
+        if (worldCamera == null)
+        {
+            Camera mainCamera = Camera.main;
+            worldCamera = mainCamera != null ? mainCamera : FindAnyObjectByType<Camera>();
+        }
+
+        targetGrid ??= FindAnyObjectByType<Grid>();
         eventSystem ??= EventSystem.current;
 
         if (placementOrigin == null)
         {
-            PlayerInteractor playerInteractor = FindFirstObjectByType<PlayerInteractor>();
+            PlayerInteractor playerInteractor = FindAnyObjectByType<PlayerInteractor>();
             if (playerInteractor != null)
                 placementOrigin = playerInteractor.ActorTransform;
         }
 
         if (placementOrigin == null)
         {
-            IsoPlayerController2D playerMovement = FindFirstObjectByType<IsoPlayerController2D>();
+            IsoPlayerController2D playerMovement = FindAnyObjectByType<IsoPlayerController2D>();
             if (playerMovement != null)
                 placementOrigin = playerMovement.transform;
         }
@@ -229,12 +246,17 @@ public class WorldCratePlacementSystem : MonoBehaviour
         placementContactFilter.useNormalAngle = false;
     }
 
+    private void CachePlacementDistance()
+    {
+        maxPlacementDistanceSqr = maxPlacementDistance * maxPlacementDistance;
+    }
+
     private DroppedItemVisual ResolveSharedDropPrefab()
     {
         if (sharedDropPrefab != null)
             return sharedDropPrefab;
 
-        ResourceNodeDropper sharedDropper = FindFirstObjectByType<ResourceNodeDropper>();
+        ResourceNodeDropper sharedDropper = FindAnyObjectByType<ResourceNodeDropper>();
         if (sharedDropper != null)
             sharedDropPrefab = sharedDropper.DropPrefab;
 
@@ -302,16 +324,18 @@ public class WorldCratePlacementSystem : MonoBehaviour
 
     private bool WasMirrorKeyPressed()
     {
-        Keyboard keyboard = Keyboard.current;
         return keyboard != null && keyboard.rKey.wasPressedThisFrame;
     }
 }
 
 public static class CrateGameplayBootstrap
 {
+    private static ulong installedSceneHandle = ulong.MaxValue;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void RegisterSceneCallback()
     {
+        installedSceneHandle = ulong.MaxValue;
         SceneManager.sceneLoaded -= HandleSceneLoaded;
         SceneManager.sceneLoaded += HandleSceneLoaded;
     }
@@ -319,17 +343,30 @@ public static class CrateGameplayBootstrap
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void InstallForCurrentScene()
     {
-        InstallSystems();
+        InstallSystemsForScene(SceneManager.GetActiveScene());
     }
 
     private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        InstallSystemsForScene(scene);
+    }
+
+    private static void InstallSystemsForScene(Scene scene)
+    {
+        if (!scene.IsValid() || !scene.isLoaded)
+            return;
+
+        ulong sceneHandle = scene.handle.GetRawData();
+        if (sceneHandle == installedSceneHandle)
+            return;
+
+        installedSceneHandle = sceneHandle;
         InstallSystems();
     }
 
     private static void InstallSystems()
     {
-        InventorySystem inventorySystem = UnityEngine.Object.FindFirstObjectByType<InventorySystem>();
+        InventorySystem inventorySystem = UnityEngine.Object.FindAnyObjectByType<InventorySystem>();
         if (inventorySystem != null && !inventorySystem.TryGetComponent(out WorldCratePlacementSystem _))
             inventorySystem.gameObject.AddComponent<WorldCratePlacementSystem>();
 

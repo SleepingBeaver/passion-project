@@ -28,7 +28,7 @@ public class ResourceNodeDropper : MonoBehaviour
         }
 
         if (inventorySystem == null)
-            inventorySystem = FindFirstObjectByType<InventorySystem>();
+            inventorySystem = FindAnyObjectByType<InventorySystem>();
 
         SpawnDrops();
         Destroy(gameObject);

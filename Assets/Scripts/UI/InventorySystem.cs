@@ -20,6 +20,8 @@ public class InventorySystem : MonoBehaviour
     // Estado interno dos slots e da selecao atual.
     private readonly List<InventorySlotData> slots = new();
     private int selectedSlotIndex = -1;
+    private int batchUpdateDepth;
+    private bool refreshPending;
 
     // Leitura publica do estado do inventario.
     public IReadOnlyList<InventorySlotData> Slots => slots;
@@ -27,7 +29,14 @@ public class InventorySystem : MonoBehaviour
     public int SlotsPerRow => inventoryUI != null ? inventoryUI.SlotsPerRow : fallbackSlotsPerRow;
     public int SelectedSlotIndex => selectedSlotIndex;
     public InventorySlotData SelectedSlot => TryGetSlot(selectedSlotIndex, out InventorySlotData slotData) ? slotData : null;
-    public ItemData SelectedItem => SelectedSlot != null && !SelectedSlot.IsEmpty ? SelectedSlot.item : null;
+    public ItemData SelectedItem
+    {
+        get
+        {
+            InventorySlotData selectedSlot = SelectedSlot;
+            return selectedSlot != null && !selectedSlot.IsEmpty ? selectedSlot.item : null;
+        }
+    }
     public InventorySlotVisual SlotPrefab => inventoryUI != null ? inventoryUI.SlotPrefab : null;
 
     // Eventos para sincronizar outras partes da UI.
@@ -134,9 +143,10 @@ public class InventorySystem : MonoBehaviour
 
     public bool IsSelectedItemId(string itemId)
     {
+        ItemData selectedItem = SelectedItem;
         return !string.IsNullOrWhiteSpace(itemId) &&
-               SelectedItem != null &&
-               string.Equals(SelectedItem.itemId, itemId, StringComparison.OrdinalIgnoreCase);
+               selectedItem != null &&
+               string.Equals(selectedItem.itemId, itemId, StringComparison.OrdinalIgnoreCase);
     }
 
     public bool SelectSlot(int slotIndex)
@@ -205,6 +215,24 @@ public class InventorySystem : MonoBehaviour
         return true;
     }
 
+    public void BeginBatchUpdate()
+    {
+        batchUpdateDepth++;
+    }
+
+    public void EndBatchUpdate()
+    {
+        if (batchUpdateDepth <= 0)
+            return;
+
+        batchUpdateDepth--;
+        if (batchUpdateDepth != 0 || !refreshPending)
+            return;
+
+        refreshPending = false;
+        RefreshUIImmediate();
+    }
+
     // Atualizacao interna do estado e da UI.
     private void InitializeSlots()
     {
@@ -269,6 +297,17 @@ public class InventorySystem : MonoBehaviour
     }
 
     private void RefreshUI()
+    {
+        if (batchUpdateDepth > 0)
+        {
+            refreshPending = true;
+            return;
+        }
+
+        RefreshUIImmediate();
+    }
+
+    private void RefreshUIImmediate()
     {
         if (inventoryUI != null)
         {

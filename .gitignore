@@ -5,3 +5,14 @@
 /[Bb]uilds/
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
+/.vs/
+/.vscode/
+/.idea/
+
+# Arquivos gerados pela IDE/Unity
+*.csproj
+*.sln
+*.slnx
+*.user
+*.opendb
+*.VC.db

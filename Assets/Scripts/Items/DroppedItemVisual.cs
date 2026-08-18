@@ -65,7 +65,7 @@ public class DroppedItemVisual : MonoBehaviour
         if (inventorySystem == null)
             inventorySystem = cachedSharedInventorySystem != null
                 ? cachedSharedInventorySystem
-                : FindFirstObjectByType<InventorySystem>();
+                : FindAnyObjectByType<InventorySystem>();
 
         if (inventorySystem != null)
             cachedSharedInventorySystem = inventorySystem;

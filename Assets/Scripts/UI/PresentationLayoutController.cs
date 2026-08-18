@@ -106,7 +106,7 @@ public class PresentationLayoutController : MonoBehaviour
                 : Camera.main;
 
             if (targetCamera == null)
-                targetCamera = FindFirstObjectByType<Camera>();
+                targetCamera = FindAnyObjectByType<Camera>();
         }
     }
 
@@ -211,9 +211,12 @@ public class PresentationLayoutController : MonoBehaviour
 
 public static class PresentationLayoutBootstrap
 {
+    private static ulong installedSceneHandle = ulong.MaxValue;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void RegisterSceneCallback()
     {
+        installedSceneHandle = ulong.MaxValue;
         SceneManager.sceneLoaded -= HandleSceneLoaded;
         SceneManager.sceneLoaded += HandleSceneLoaded;
     }
@@ -221,17 +224,30 @@ public static class PresentationLayoutBootstrap
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void InstallForCurrentScene()
     {
-        InstallControllers();
+        InstallControllersForScene(SceneManager.GetActiveScene());
     }
 
     private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        InstallControllersForScene(scene);
+    }
+
+    private static void InstallControllersForScene(Scene scene)
+    {
+        if (!scene.IsValid() || !scene.isLoaded)
+            return;
+
+        ulong sceneHandle = scene.handle.GetRawData();
+        if (sceneHandle == installedSceneHandle)
+            return;
+
+        installedSceneHandle = sceneHandle;
         InstallControllers();
     }
 
     private static void InstallControllers()
     {
-        Canvas[] canvases = Object.FindObjectsByType<Canvas>(FindObjectsSortMode.None);
+        Canvas[] canvases = Object.FindObjectsByType<Canvas>();
 
         for (int i = 0; i < canvases.Length; i++)
         {

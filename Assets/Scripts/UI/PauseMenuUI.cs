@@ -216,13 +216,13 @@ public class PauseMenuUI : MonoBehaviour
         targetCanvas ??= GetComponentInParent<Canvas>();
         targetCanvas = targetCanvas != null ? targetCanvas.rootCanvas : null;
 
-        playerInteractor ??= FindFirstObjectByType<PlayerInteractor>();
+        playerInteractor ??= FindAnyObjectByType<PlayerInteractor>();
 
         if (playerInteractor != null)
             playerMovement ??= playerInteractor.GetComponent<IsoPlayerController2D>();
 
-        playerMovement ??= FindFirstObjectByType<IsoPlayerController2D>();
-        simpleInventoryUI ??= FindFirstObjectByType<SimpleInventoryUI>();
+        playerMovement ??= FindAnyObjectByType<IsoPlayerController2D>();
+        simpleInventoryUI ??= FindAnyObjectByType<SimpleInventoryUI>();
     }
 
     private void LoadSettings()
@@ -268,7 +268,7 @@ public class PauseMenuUI : MonoBehaviour
         if (Time.timeScale <= 0.0001f && !pausedByMenu)
             return false;
 
-        simpleInventoryUI ??= FindFirstObjectByType<SimpleInventoryUI>();
+        simpleInventoryUI ??= FindAnyObjectByType<SimpleInventoryUI>();
         if (simpleInventoryUI != null &&
             (simpleInventoryUI.IsOpen || simpleInventoryUI.IsTransitioning || simpleInventoryUI.IsExternalModalOpen))
         {
@@ -389,7 +389,7 @@ public class PauseMenuUI : MonoBehaviour
             if (pausedByMenu)
                 return;
 
-            simpleInventoryUI ??= FindFirstObjectByType<SimpleInventoryUI>();
+            simpleInventoryUI ??= FindAnyObjectByType<SimpleInventoryUI>();
             usingSimpleInventoryModal = simpleInventoryUI != null && simpleInventoryUI.TryOpenExternalModal();
 
             if (playerInteractor != null)

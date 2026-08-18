@@ -45,6 +45,8 @@ public class CraftingSystem : MonoBehaviour
         public int Amount { get; }
     }
 
+    private readonly List<ConsumedIngredient> consumedIngredients = new();
+
     private void Awake()
     {
         ResolveInventorySystem();
@@ -71,48 +73,58 @@ public class CraftingSystem : MonoBehaviour
             return false;
 
         CraftingIngredientRequirement[] ingredients = recipe.Ingredients;
-        List<ConsumedIngredient> consumedIngredients = new(ingredients.Length);
+        consumedIngredients.Clear();
+        if (consumedIngredients.Capacity < ingredients.Length)
+            consumedIngredients.Capacity = ingredients.Length;
 
-        for (int i = 0; i < ingredients.Length; i++)
+        inventorySystem.BeginBatchUpdate();
+        try
         {
-            CraftingIngredientRequirement ingredient = ingredients[i];
-
-            if (!TryConsumeIngredientFromInventory(ingredient, out int consumedAmount))
+            for (int i = 0; i < ingredients.Length; i++)
             {
-                for (int rollbackIndex = 0; rollbackIndex < consumedIngredients.Count; rollbackIndex++)
+                CraftingIngredientRequirement ingredient = ingredients[i];
+
+                if (!TryConsumeIngredientFromInventory(ingredient, out int consumedAmount))
                 {
-                    ConsumedIngredient consumed = consumedIngredients[rollbackIndex];
+                    for (int rollbackIndex = 0; rollbackIndex < consumedIngredients.Count; rollbackIndex++)
+                    {
+                        ConsumedIngredient consumed = consumedIngredients[rollbackIndex];
+                        inventorySystem.AddItem(consumed.Item, consumed.Amount, out _);
+                    }
+
+                    resultMessage = "Nao foi possivel consumir os ingredientes.";
+                    return false;
+                }
+
+                consumedIngredients.Add(new ConsumedIngredient(ingredient.Item, consumedAmount));
+            }
+
+            bool addedAll = inventorySystem.AddItem(recipe.OutputItem, recipe.OutputAmount, out int addedAmount);
+            if (!addedAll || addedAmount != recipe.OutputAmount)
+            {
+                if (addedAmount > 0)
+                    inventorySystem.RemoveItem(recipe.OutputItem, addedAmount);
+
+                for (int i = 0; i < consumedIngredients.Count; i++)
+                {
+                    ConsumedIngredient consumed = consumedIngredients[i];
                     inventorySystem.AddItem(consumed.Item, consumed.Amount, out _);
                 }
 
-                resultMessage = "Nao foi possivel consumir os ingredientes.";
+                resultMessage = "Nao foi possivel adicionar o item criado ao inventario.";
                 return false;
             }
 
-            consumedIngredients.Add(new ConsumedIngredient(ingredient.Item, consumedAmount));
+            string craftedItemName = !string.IsNullOrWhiteSpace(recipe.OutputItem.itemName)
+                ? recipe.OutputItem.itemName
+                : recipe.DisplayName;
+            resultMessage = $"Criado: {recipe.OutputAmount}x {craftedItemName}";
+            return true;
         }
-
-        bool addedAll = inventorySystem.AddItem(recipe.OutputItem, recipe.OutputAmount, out int addedAmount);
-        if (!addedAll || addedAmount != recipe.OutputAmount)
+        finally
         {
-            if (addedAmount > 0)
-                inventorySystem.RemoveItem(recipe.OutputItem, addedAmount);
-
-            for (int i = 0; i < consumedIngredients.Count; i++)
-            {
-                ConsumedIngredient consumed = consumedIngredients[i];
-                inventorySystem.AddItem(consumed.Item, consumed.Amount, out _);
-            }
-
-            resultMessage = "Nao foi possivel adicionar o item criado ao inventario.";
-            return false;
+            inventorySystem.EndBatchUpdate();
         }
-
-        string craftedItemName = !string.IsNullOrWhiteSpace(recipe.OutputItem.itemName)
-            ? recipe.OutputItem.itemName
-            : recipe.DisplayName;
-        resultMessage = $"Criado: {recipe.OutputAmount}x {craftedItemName}";
-        return true;
     }
 
     public bool CanCraft(CraftingRecipeDefinition recipe, out string reason)
@@ -186,7 +198,7 @@ public class CraftingSystem : MonoBehaviour
             inventorySystem = GetComponent<InventorySystem>();
 
         if (inventorySystem == null)
-            inventorySystem = FindFirstObjectByType<InventorySystem>();
+            inventorySystem = FindAnyObjectByType<InventorySystem>();
     }
 
     private void EnsureRecipesConfigured()
@@ -255,7 +267,7 @@ public class CraftingSystem : MonoBehaviour
         if (string.IsNullOrWhiteSpace(itemId))
             return false;
 
-        InventoryDebugInput debugInput = FindFirstObjectByType<InventoryDebugInput>();
+        InventoryDebugInput debugInput = FindAnyObjectByType<InventoryDebugInput>();
         if (debugInput != null && debugInput.TryGetConfiguredItem(itemId, out itemData) && itemData != null)
             return true;
 
@@ -439,9 +451,12 @@ public class CraftingSystem : MonoBehaviour
 
 public static class CraftingGameplayBootstrap
 {
+    private static ulong installedSceneHandle = ulong.MaxValue;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void RegisterSceneCallback()
     {
+        installedSceneHandle = ulong.MaxValue;
         SceneManager.sceneLoaded -= HandleSceneLoaded;
         SceneManager.sceneLoaded += HandleSceneLoaded;
     }
@@ -449,17 +464,30 @@ public static class CraftingGameplayBootstrap
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void InstallForCurrentScene()
     {
-        InstallSystems();
+        InstallSystemsForScene(SceneManager.GetActiveScene());
     }
 
     private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        InstallSystemsForScene(scene);
+    }
+
+    private static void InstallSystemsForScene(Scene scene)
+    {
+        if (!scene.IsValid() || !scene.isLoaded)
+            return;
+
+        ulong sceneHandle = scene.handle.GetRawData();
+        if (sceneHandle == installedSceneHandle)
+            return;
+
+        installedSceneHandle = sceneHandle;
         InstallSystems();
     }
 
     private static void InstallSystems()
     {
-        InventorySystem inventorySystem = UnityEngine.Object.FindFirstObjectByType<InventorySystem>();
+        InventorySystem inventorySystem = UnityEngine.Object.FindAnyObjectByType<InventorySystem>();
         if (inventorySystem == null)
             return;
 

@@ -37,13 +37,14 @@ public class CrateStorageInteractable : WorldInteractable
     [SerializeField] private Transform pickupTargetOverride;
 
     private readonly List<InventorySlotData> slots = new();
+    private int storedItemAmount;
 
     public event Action StorageChanged;
 
     public IReadOnlyList<InventorySlotData> Slots => slots;
     public int SlotCount => slots.Count;
     public int SlotsPerRow => Mathf.Max(1, slotsPerRow);
-    public bool IsEmpty => !HasAnyStoredItems();
+    public bool IsEmpty => storedItemAmount <= 0;
     public string DisplayName => crateItemData != null && !string.IsNullOrWhiteSpace(crateItemData.itemName)
         ? crateItemData.itemName
         : DefaultDisplayName;
@@ -124,10 +125,12 @@ public class CrateStorageInteractable : WorldInteractable
         bool changed = TryFillExistingStacks(itemData, maxStack, ref remaining);
         changed |= TryFillEmptySlots(itemData, maxStack, ref remaining);
 
+        addedAmount = requestedAmount - remaining;
+        storedItemAmount += addedAmount;
+
         if (changed)
             NotifyStorageChanged();
 
-        addedAmount = requestedAmount - remaining;
         return remaining == 0;
     }
 
@@ -156,7 +159,10 @@ public class CrateStorageInteractable : WorldInteractable
         }
 
         if (changed)
+        {
+            storedItemAmount = Mathf.Max(0, storedItemAmount - (amount - remaining));
             NotifyStorageChanged();
+        }
 
         return remaining == 0;
     }
@@ -172,6 +178,7 @@ public class CrateStorageInteractable : WorldInteractable
         removedItem = slotData.item;
         removedAmount = Mathf.Min(amount, slotData.amount);
         slotData.amount -= removedAmount;
+        storedItemAmount = Mathf.Max(0, storedItemAmount - removedAmount);
 
         if (slotData.amount <= 0)
             slotData.Clear();
@@ -309,6 +316,7 @@ public class CrateStorageInteractable : WorldInteractable
 
         slots.Clear();
         slots.Capacity = desiredSlotCount;
+        storedItemAmount = 0;
 
         for (int i = 0; i < desiredSlotCount; i++)
             slots.Add(new InventorySlotData());
@@ -317,12 +325,12 @@ public class CrateStorageInteractable : WorldInteractable
     private void ResolveDropDependencies()
     {
         if (inventorySystem == null)
-            inventorySystem = FindFirstObjectByType<InventorySystem>();
+            inventorySystem = FindAnyObjectByType<InventorySystem>();
 
         if (dropPrefab != null)
             return;
 
-        ResourceNodeDropper sharedDropper = FindFirstObjectByType<ResourceNodeDropper>();
+        ResourceNodeDropper sharedDropper = FindAnyObjectByType<ResourceNodeDropper>();
         if (sharedDropper == null)
             return;
 
@@ -340,17 +348,6 @@ public class CrateStorageInteractable : WorldInteractable
         for (int i = 0; i < slots.Count; i++)
         {
             if (!slots[i].IsEmpty && slots[i].item == itemData)
-                return true;
-        }
-
-        return false;
-    }
-
-    private bool HasAnyStoredItems()
-    {
-        for (int i = 0; i < slots.Count; i++)
-        {
-            if (!slots[i].IsEmpty)
                 return true;
         }
 

@@ -164,7 +164,7 @@ public class CrateStorageUI : MonoBehaviour
 
     public static Canvas FindBestCanvas()
     {
-        Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsSortMode.None);
+        Canvas[] canvases = FindObjectsByType<Canvas>();
 
         for (int i = 0; i < canvases.Length; i++)
         {
@@ -266,7 +266,7 @@ public class CrateStorageUI : MonoBehaviour
         targetCanvas ??= GetComponentInParent<Canvas>();
         targetCanvas ??= FindBestCanvas();
         targetCanvas = targetCanvas != null ? targetCanvas.rootCanvas : null;
-        inventorySystem ??= FindFirstObjectByType<InventorySystem>();
+        inventorySystem ??= FindAnyObjectByType<InventorySystem>();
     }
 
     private bool ResolveSlotPrefab()
@@ -280,7 +280,7 @@ public class CrateStorageUI : MonoBehaviour
             return true;
         }
 
-        InventoryUIController inventoryUI = FindFirstObjectByType<InventoryUIController>();
+        InventoryUIController inventoryUI = FindAnyObjectByType<InventoryUIController>();
         if (inventoryUI != null)
         {
             slotPrefab = inventoryUI.SlotPrefab;
@@ -307,7 +307,7 @@ public class CrateStorageUI : MonoBehaviour
             if (pausedByStorage)
                 return;
 
-            simpleInventoryUI = FindFirstObjectByType<SimpleInventoryUI>();
+            simpleInventoryUI = FindAnyObjectByType<SimpleInventoryUI>();
             usingSimpleInventoryModal = simpleInventoryUI != null && simpleInventoryUI.TryOpenExternalModal();
 
             if (activeInteractor != null)
@@ -475,7 +475,7 @@ public class CrateStorageUI : MonoBehaviour
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
         scaler.matchWidthOrHeight = 0.5f;
 
-        if (FindFirstObjectByType<EventSystem>() == null)
+        if (FindAnyObjectByType<EventSystem>() == null)
         {
             GameObject eventSystemObject = new("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
             DontDestroyOnLoad(eventSystemObject);
