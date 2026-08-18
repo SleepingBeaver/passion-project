@@ -55,17 +55,30 @@ public class PlayerInteractor : MonoBehaviour
 
     private void Update()
     {
-        keyboard ??= Keyboard.current;
-
         if (Time.time >= nextCleanupTime)
         {
             CleanupNearby();
             nextCleanupTime = Time.time + NearbyCleanupInterval;
         }
 
-        UpdateCurrentInteractable();
-        HandleInteractionInput();
-        UpdatePromptUI();
+        if (nearbyInteractables.Count == 0 && currentInteractable == null)
+        {
+            HidePromptImmediate();
+            return;
+        }
+
+        keyboard ??= Keyboard.current;
+
+        bool canInteract = UpdateCurrentInteractable();
+        ResolveInteractionState(canInteract, out bool requiresHold, out float holdDuration);
+
+        if (HandleInteractionInput(canInteract, requiresHold, holdDuration))
+        {
+            canInteract = currentInteractable != null && currentInteractable.CanInteract(this);
+            ResolveInteractionState(canInteract, out requiresHold, out holdDuration);
+        }
+
+        UpdatePromptUI(canInteract, requiresHold, holdDuration);
     }
 
     // Deteccao de objetos proximos.
@@ -107,12 +120,12 @@ public class PlayerInteractor : MonoBehaviour
     }
 
     // Fluxo de escolha e execucao da interacao atual.
-    private void UpdateCurrentInteractable()
+    private bool UpdateCurrentInteractable()
     {
-        WorldInteractable best = ResolveBestInteractable();
+        WorldInteractable best = ResolveBestInteractable(out bool bestCanInteract);
 
         if (best == currentInteractable)
-            return;
+            return bestCanInteract;
 
         if (currentInteractable != null)
             currentInteractable.OnFocusExit(this);
@@ -122,11 +135,13 @@ public class PlayerInteractor : MonoBehaviour
 
         if (currentInteractable != null)
             currentInteractable.OnFocusEnter(this);
+
+        return bestCanInteract;
     }
 
     // Prioriza o alvo mais proximo que possa ser usado agora; se nada estiver utilizavel,
     // ainda escolhemos o melhor fallback para manter o prompt contextual visivel.
-    private WorldInteractable ResolveBestInteractable()
+    private WorldInteractable ResolveBestInteractable(out bool canInteract)
     {
         WorldInteractable bestAvailable = null;
         WorldInteractable bestFallback = null;
@@ -142,9 +157,9 @@ public class PlayerInteractor : MonoBehaviour
                 continue;
 
             float distanceSqr = (candidate.transform.position - origin).sqrMagnitude;
-            bool canInteract = candidate.CanInteract(this);
+            bool candidateCanInteract = candidate.CanInteract(this);
 
-            if (canInteract)
+            if (candidateCanInteract)
             {
                 if (distanceSqr < bestAvailableDistanceSqr)
                 {
@@ -159,29 +174,35 @@ public class PlayerInteractor : MonoBehaviour
             }
         }
 
-        return bestAvailable != null ? bestAvailable : bestFallback;
+        canInteract = bestAvailable != null;
+        return canInteract ? bestAvailable : bestFallback;
     }
 
-    private void HandleInteractionInput()
+    private void ResolveInteractionState(bool canInteract, out bool requiresHold, out float holdDuration)
+    {
+        requiresHold = canInteract && currentInteractable != null && currentInteractable.GetRequiresHold(this);
+        holdDuration = requiresHold ? currentInteractable.GetHoldDuration(this) : 0f;
+    }
+
+    private bool HandleInteractionInput(bool canInteract, bool requiresHold, float holdDuration)
     {
         if (keyboard == null || currentInteractable == null)
-            return;
+            return false;
 
-        if (!currentInteractable.CanInteract(this))
+        if (!canInteract)
         {
             CancelHoldBecauseInteractionBecameInvalid();
-            return;
+            return false;
         }
 
-        if (currentInteractable.GetRequiresHold(this))
-        {
-            HandleHoldInteraction();
-        }
-        else
-        {
-            if (keyboard.eKey.wasPressedThisFrame)
-                currentInteractable.TryInteract(this);
-        }
+        if (requiresHold)
+            return HandleHoldInteraction(holdDuration);
+
+        if (!keyboard.eKey.wasPressedThisFrame)
+            return false;
+
+        currentInteractable.TryInteract(this);
+        return true;
     }
 
     private void CancelHoldBecauseInteractionBecameInvalid()
@@ -193,7 +214,7 @@ public class PlayerInteractor : MonoBehaviour
         CancelHold();
     }
 
-    private void HandleHoldInteraction()
+    private bool HandleHoldInteraction(float holdDuration)
     {
         if (!holdInProgress && keyboard.eKey.wasPressedThisFrame)
         {
@@ -203,22 +224,25 @@ public class PlayerInteractor : MonoBehaviour
         }
 
         if (!holdInProgress)
-            return;
+            return false;
 
         if (!keyboard.eKey.isPressed)
         {
             currentInteractable.OnHoldCanceled(this);
             CancelHold();
-            return;
+            return false;
         }
 
         holdTimer += Time.deltaTime;
 
-        if (holdTimer >= currentInteractable.GetHoldDuration(this))
+        if (holdTimer >= holdDuration)
         {
             currentInteractable.TryInteract(this);
             CancelHold();
+            return true;
         }
+
+        return false;
     }
 
     private void CancelHold()
@@ -230,9 +254,8 @@ public class PlayerInteractor : MonoBehaviour
     }
 
     // Atualizacao visual do prompt e da barra de hold.
-    private void UpdatePromptUI()
+    private void UpdatePromptUI(bool canInteract, bool requiresHold, float holdDuration)
     {
-        bool canInteract = currentInteractable != null && currentInteractable.CanInteract(this);
         bool show = currentInteractable != null && canInteract;
 
         SetPromptVisible(show);
@@ -244,13 +267,10 @@ public class PlayerInteractor : MonoBehaviour
             return;
         }
 
-        bool requiresHold = canInteract && currentInteractable.GetRequiresHold(this);
-
         SetPromptText(currentInteractable.GetPromptText(this));
         SetHoldIndicatorVisible(requiresHold);
 
         float fillAmount = 0f;
-        float holdDuration = currentInteractable.GetHoldDuration(this);
         if (requiresHold && holdInProgress && holdDuration > 0f)
             fillAmount = Mathf.Clamp01(holdTimer / holdDuration);
 

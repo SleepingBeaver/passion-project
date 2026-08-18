@@ -8,6 +8,7 @@ public class WorldInfoSystem : MonoBehaviour
     public const int DaysPerSeason = 30;
     public const int MinutesPerStep = 10;
     public const int MaxMoney = 9_999_999;
+    private const int MinutesPerDay = 24 * 60;
 
     // Enumeracoes que definem os estados do mundo.
     public enum Season
@@ -39,6 +40,33 @@ public class WorldInfoSystem : MonoBehaviour
         Storm = 5
     }
 
+    public readonly struct TimeChange
+    {
+        public TimeChange(
+            int previousMinuteOfDay,
+            int currentMinuteOfDay,
+            long advancedGameMinutes,
+            int calendarDaysAdvanced,
+            bool isJump)
+        {
+            PreviousMinuteOfDay = previousMinuteOfDay;
+            CurrentMinuteOfDay = currentMinuteOfDay;
+            AdvancedGameMinutes = advancedGameMinutes;
+            CalendarDaysAdvanced = calendarDaysAdvanced;
+            IsJump = isJump;
+        }
+
+        public int PreviousMinuteOfDay { get; }
+        public int CurrentMinuteOfDay { get; }
+        public long AdvancedGameMinutes { get; }
+        public int CalendarDaysAdvanced { get; }
+        public bool IsJump { get; }
+    }
+
+    private static readonly int SeasonCount = Enum.GetValues(typeof(Season)).Length;
+    private static readonly int WeekDayCount = Enum.GetValues(typeof(WeekDay)).Length;
+    private static readonly int WeatherTypeCount = Enum.GetValues(typeof(WeatherType)).Length;
+
     // Configuracao de calendario.
     [Header("Calendar")]
     [SerializeField] private Season currentSeason = Season.Summer;
@@ -49,7 +77,7 @@ public class WorldInfoSystem : MonoBehaviour
     // Configuracao de tempo.
     [Header("Time")]
     [SerializeField, Range(0, 23)] private int currentHour24 = 6;
-    [SerializeField, Range(0, 50)] private int currentMinute = 0;
+    [SerializeField, Range(0, 59)] private int currentMinute = 0;
     [SerializeField] private bool autoAdvanceTime = true;
     [FormerlySerializedAs("realSecondsPerTimeStep")]
     [SerializeField, Min(0.05f), Tooltip("Quantos segundos reais levam para o relogio avancar 10 minutos no jogo.")]
@@ -68,6 +96,7 @@ public class WorldInfoSystem : MonoBehaviour
 
     // Estado interno do acumulador de tempo.
     private float timeAccumulator;
+    private bool timeAdvancementSuspended;
 
     // Leitura publica do estado atual do mundo.
     public Season CurrentSeason => currentSeason;
@@ -76,11 +105,15 @@ public class WorldInfoSystem : MonoBehaviour
     public WeekDay CurrentWeekDay => currentWeekDay;
     public int CurrentHour24 => currentHour24;
     public int CurrentMinute => currentMinute;
+    public int CurrentMinuteOfDay => currentHour24 * 60 + currentMinute;
     public WeatherType CurrentWeather => currentWeather;
     public int Money => money;
+    public bool IsTimeAdvancementSuspended => timeAdvancementSuspended;
 
-    // Evento para avisar a UI que algo mudou.
+    // Eventos mantem a UI existente e permitem integracoes especificas sem polling.
     public event Action InfoChanged;
+    public event Action<TimeChange> TimeChanged;
+    public event Action CalendarDayAdvanced;
 
     // Ciclo de vida.
     private void Awake()
@@ -105,21 +138,18 @@ public class WorldInfoSystem : MonoBehaviour
 
     private void Update()
     {
-        if (!autoAdvanceTime || secondsPerTimeAdvance <= 0f)
+        if (!autoAdvanceTime || timeAdvancementSuspended || secondsPerTimeAdvance <= 0f)
             return;
 
         timeAccumulator += Time.deltaTime;
-        bool advancedTime = false;
+        int elapsedSteps = Mathf.FloorToInt(timeAccumulator / secondsPerTimeAdvance);
+        if (elapsedSteps <= 0)
+            return;
 
-        while (timeAccumulator >= secondsPerTimeAdvance)
-        {
-            timeAccumulator -= secondsPerTimeAdvance;
-            AdvanceTimeStepsInternal(1);
-            advancedTime = true;
-        }
-
-        if (advancedTime)
-            NotifyInfoChanged();
+        timeAccumulator -= elapsedSteps * secondsPerTimeAdvance;
+        TimeChange change = AdvanceTimeStepsInternal(elapsedSteps);
+        NotifyTimeChanged(change);
+        NotifyInfoChanged();
     }
 
     // Acoes rapidas uteis para debug no Inspector.
@@ -139,7 +169,7 @@ public class WorldInfoSystem : MonoBehaviour
     [ContextMenu("Cycle Weather")]
     public void CycleWeather()
     {
-        currentWeather = (WeatherType)(((int)currentWeather + 1) % Enum.GetValues(typeof(WeatherType)).Length);
+        currentWeather = (WeatherType)(((int)currentWeather + 1) % WeatherTypeCount);
         NotifyInfoChanged();
     }
 
@@ -155,14 +185,54 @@ public class WorldInfoSystem : MonoBehaviour
         if (stepCount <= 0)
             return;
 
-        AdvanceTimeStepsInternal(stepCount);
+        TimeChange change = AdvanceTimeStepsInternal(stepCount);
+        NotifyTimeChanged(change);
         NotifyInfoChanged();
     }
 
     public void SetTime(int hour24, int minute)
     {
+        int previousMinuteOfDay = CurrentMinuteOfDay;
         currentHour24 = Mathf.Clamp(hour24, 0, 23);
         currentMinute = NormalizeMinute(minute);
+
+        NotifyTimeChanged(new TimeChange(
+            previousMinuteOfDay,
+            CurrentMinuteOfDay,
+            advancedGameMinutes: 0L,
+            calendarDaysAdvanced: 0,
+            isJump: true));
+        NotifyInfoChanged();
+    }
+
+    public void SetTimeAdvancementSuspended(bool suspended)
+    {
+        timeAdvancementSuspended = suspended;
+    }
+
+    // Aplica data e horario de despertar de forma atomica. O controlador do dia
+    // informa se a meia-noite civil ja avancou o calendario nesta sessao.
+    public void ApplyGameplayDayTransition(int wakeHour24, int wakeMinute, bool advanceCalendar)
+    {
+        int previousMinuteOfDay = CurrentMinuteOfDay;
+        int calendarDaysAdvanced = 0;
+
+        if (advanceCalendar)
+        {
+            AdvanceDayInternal();
+            calendarDaysAdvanced = 1;
+        }
+
+        currentHour24 = Mathf.Clamp(wakeHour24, 0, 23);
+        currentMinute = NormalizeMinute(wakeMinute);
+        timeAccumulator = 0f;
+
+        NotifyTimeChanged(new TimeChange(
+            previousMinuteOfDay,
+            CurrentMinuteOfDay,
+            advancedGameMinutes: 0L,
+            calendarDaysAdvanced,
+            isJump: true));
         NotifyInfoChanged();
     }
 
@@ -209,35 +279,36 @@ public class WorldInfoSystem : MonoBehaviour
     }
 
     // Avanco interno do calendario, clima e horario.
-    private void AdvanceTimeStepsInternal(int stepCount)
+    private TimeChange AdvanceTimeStepsInternal(int stepCount)
     {
-        for (int i = 0; i < stepCount; i++)
-        {
-            currentMinute += MinutesPerStep;
+        int previousMinuteOfDay = CurrentMinuteOfDay;
+        long totalMinutes = currentHour24 * 60L + currentMinute + stepCount * (long)MinutesPerStep;
+        int daysToAdvance = (int)(totalMinutes / MinutesPerDay);
+        int minuteOfDay = (int)(totalMinutes % MinutesPerDay);
 
-            if (currentMinute >= 60)
-            {
-                currentMinute = 0;
-                currentHour24++;
-            }
+        currentHour24 = minuteOfDay / 60;
+        currentMinute = minuteOfDay % 60;
 
-            if (currentHour24 >= 24)
-            {
-                currentHour24 = 0;
-                AdvanceDayInternal();
-            }
-        }
+        for (int i = 0; i < daysToAdvance; i++)
+            AdvanceDayInternal();
+
+        return new TimeChange(
+            previousMinuteOfDay,
+            CurrentMinuteOfDay,
+            stepCount * (long)MinutesPerStep,
+            daysToAdvance,
+            isJump: false);
     }
 
     private void AdvanceDayInternal()
     {
         currentDayOfSeason++;
-        currentWeekDay = (WeekDay)(((int)currentWeekDay + 1) % Enum.GetValues(typeof(WeekDay)).Length);
+        currentWeekDay = (WeekDay)(((int)currentWeekDay + 1) % WeekDayCount);
 
         if (currentDayOfSeason > DaysPerSeason)
         {
             currentDayOfSeason = 1;
-            currentSeason = (Season)(((int)currentSeason + 1) % Enum.GetValues(typeof(Season)).Length);
+            currentSeason = (Season)(((int)currentSeason + 1) % SeasonCount);
 
             if (currentSeason == Season.Spring)
                 currentYear++;
@@ -248,13 +319,14 @@ public class WorldInfoSystem : MonoBehaviour
             weatherDayIndex++;
             currentWeather = ResolveWeatherForCurrentCycle();
         }
+
+        CalendarDayAdvanced?.Invoke();
     }
 
     private WeatherType ResolveWeatherForCurrentCycle()
     {
         System.Random random = new(weatherSeed + weatherDayIndex * 7919);
-        int weatherCount = Enum.GetValues(typeof(WeatherType)).Length;
-        return (WeatherType)random.Next(0, weatherCount);
+        return (WeatherType)random.Next(0, WeatherTypeCount);
     }
 
     // Utilitarios de saneamento e notificacao.
@@ -271,12 +343,16 @@ public class WorldInfoSystem : MonoBehaviour
 
     private static int NormalizeMinute(int minute)
     {
-        int rounded = Mathf.RoundToInt(minute / (float)MinutesPerStep) * MinutesPerStep;
-        return Mathf.Clamp(rounded, 0, 50);
+        return Mathf.Clamp(minute, 0, 59);
     }
 
     private void NotifyInfoChanged()
     {
         InfoChanged?.Invoke();
+    }
+
+    private void NotifyTimeChanged(TimeChange change)
+    {
+        TimeChanged?.Invoke(change);
     }
 }

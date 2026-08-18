@@ -15,6 +15,7 @@ public class UIInfoPanel : MonoBehaviour
     // Rotulos padrao usados para apresentar os dados do mundo.
     private static readonly string[] SeasonLabels = { "Spring", "Summer", "Autumn", "Winter" };
     private static readonly string[] WeekDayLabels = { "Mon.", "Tue.", "Wed.", "Thu.", "Fri.", "Sat.", "Sun." };
+    private static readonly string[] DigitLabels = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
     private static readonly Color DefaultPanelTextColor = new Color(0.11320752f, 0.11320752f, 0.11320752f, 1f);
 
     // Fonte principal dos dados exibidos no painel.
@@ -123,8 +124,8 @@ public class UIInfoPanel : MonoBehaviour
                 continue;
 
             string digitText = i < moneyString.Length
-                ? moneyString[i].ToString()
-                : "0";
+                ? DigitLabels[moneyString[i] - '0']
+                : DigitLabels[0];
 
             SetTextIfChanged(moneyDigitTexts[i], digitText);
         }
@@ -178,7 +179,7 @@ public class UIInfoPanel : MonoBehaviour
             return boundWorldInfoSystem;
         }
 
-        worldInfoSystem = FindFirstObjectByType<WorldInfoSystem>();
+        worldInfoSystem = FindAnyObjectByType<WorldInfoSystem>();
 
         return worldInfoSystem;
     }

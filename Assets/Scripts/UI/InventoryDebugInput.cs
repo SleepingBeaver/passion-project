@@ -11,6 +11,9 @@ public class InventoryDebugInput : MonoBehaviour
     [SerializeField] private int removeAmountPerPress = 1;
     [SerializeField] private int addCrateAmountPerPress = 1;
 
+    [Header("Day Cycle Debug")]
+    [SerializeField] private GameplayDayCycleController gameplayDayCycleController;
+
     private Keyboard keyboard;
 
     public bool TryGetConfiguredItem(string itemId, out ItemData itemData)
@@ -51,7 +54,19 @@ public class InventoryDebugInput : MonoBehaviour
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         keyboard ??= Keyboard.current;
 
-        if (keyboard == null || inventorySystem == null)
+        if (keyboard == null)
+            return;
+
+        // Atalho temporario. A futura cama chamara o mesmo RequestSleep().
+        if (gameplayDayCycleController != null && keyboard.numpad1Key.wasPressedThisFrame)
+        {
+            bool accepted = gameplayDayCycleController.RequestSleep();
+            Debug.Log(accepted
+                ? "Sono solicitado pelo atalho temporario NumPad 1."
+                : "Solicitacao de sono ignorada porque uma transicao ja esta em andamento.");
+        }
+
+        if (inventorySystem == null)
             return;
 
         if (woodItem != null && keyboard.mKey.wasPressedThisFrame)

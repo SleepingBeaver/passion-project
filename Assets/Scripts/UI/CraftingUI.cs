@@ -34,6 +34,7 @@ public class CraftingUI : MonoBehaviour
     private const string DefaultHintText = "Selecione um item. Clique novamente no slot selecionado para criar.";
     private const string DefaultFooterText = "C ou Esc para fechar";
     private const string RuntimeCanvasName = "CraftingRuntimeCanvas";
+    private const float ReferenceResolveRetryInterval = 0.5f;
 
     private sealed class RecipeSlotBinding
     {
@@ -54,6 +55,7 @@ public class CraftingUI : MonoBehaviour
     [SerializeField] private PlayerInteractor playerInteractor;
 
     private readonly List<RecipeSlotBinding> recipeSlots = new();
+    private readonly StringBuilder resourcesTextBuilder = new(192);
 
     private GameObject overlayRoot;
     private RectTransform panelRect;
@@ -90,6 +92,7 @@ public class CraftingUI : MonoBehaviour
     private bool refreshRequestedWhileSuppressed;
     private bool toggleInputArmed;
     private float previousTimeScale = 1f;
+    private float nextReferenceResolveTime;
 
     private static Canvas runtimeFallbackCanvas;
 
@@ -133,13 +136,28 @@ public class CraftingUI : MonoBehaviour
 
     private void OnValidate()
     {
+#if UNITY_EDITOR
+        // Scene restoration invokes OnValidate while hierarchy mutations are forbidden.
+        // Defer the editor preview rebuild until Unity reaches a safe editor update.
+        UnityEditor.EditorApplication.delayCall -= RefreshAfterValidation;
+        UnityEditor.EditorApplication.delayCall += RefreshAfterValidation;
+#endif
+    }
+
+#if UNITY_EDITOR
+    private void RefreshAfterValidation()
+    {
+        UnityEditor.EditorApplication.delayCall -= RefreshAfterValidation;
+
+        if (this == null || Application.isPlaying)
+            return;
+
         keyboard = Keyboard.current;
         ResolveReferences();
         EnsureRuntimeUI();
-
-        if (!Application.isPlaying)
-            RefreshAll();
+        RefreshAll();
     }
+#endif
 
     private void OnDestroy()
     {
@@ -151,8 +169,11 @@ public class CraftingUI : MonoBehaviour
     {
         keyboard ??= Keyboard.current;
 
-        ResolveReferences();
-        TryBindSources();
+        if (HasMissingReferences() && Time.realtimeSinceStartup >= nextReferenceResolveTime)
+            ResolveReferences();
+
+        if (boundInventorySystem != inventorySystem || boundCraftingSystem != craftingSystem)
+            TryBindSources();
 
         if (keyboard == null)
             return;
@@ -212,7 +233,7 @@ public class CraftingUI : MonoBehaviour
 
     public static Canvas FindBestCanvas()
     {
-        Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsSortMode.None);
+        Canvas[] canvases = FindObjectsByType<Canvas>();
 
         for (int i = 0; i < canvases.Length; i++)
         {
@@ -267,7 +288,7 @@ public class CraftingUI : MonoBehaviour
         if (craftingSystem == null || inventorySystem == null || overlayRoot == null)
             return false;
 
-        simpleInventoryUI ??= FindFirstObjectByType<SimpleInventoryUI>();
+        simpleInventoryUI ??= FindAnyObjectByType<SimpleInventoryUI>();
 
         if (simpleInventoryUI != null &&
             (simpleInventoryUI.IsOpen || simpleInventoryUI.IsTransitioning || simpleInventoryUI.IsExternalModalOpen))
@@ -284,26 +305,37 @@ public class CraftingUI : MonoBehaviour
 
     private void ResolveReferences()
     {
+        nextReferenceResolveTime = Time.realtimeSinceStartup + ReferenceResolveRetryInterval;
+
         targetCanvas ??= GetComponent<Canvas>();
         targetCanvas ??= GetComponentInParent<Canvas>();
         targetCanvas ??= FindBestCanvas();
         targetCanvas = targetCanvas != null ? targetCanvas.rootCanvas : null;
 
-        craftingSystem ??= FindFirstObjectByType<CraftingSystem>();
+        craftingSystem ??= FindAnyObjectByType<CraftingSystem>();
         inventorySystem ??= craftingSystem != null ? craftingSystem.GetComponent<InventorySystem>() : null;
-        playerInteractor ??= FindFirstObjectByType<PlayerInteractor>();
+        playerInteractor ??= FindAnyObjectByType<PlayerInteractor>();
 
         if (inventorySystem == null && playerInteractor != null)
             inventorySystem = playerInteractor.InventorySystem;
 
         if (inventorySystem == null)
-            inventorySystem = FindFirstObjectByType<InventorySystem>();
+            inventorySystem = FindAnyObjectByType<InventorySystem>();
 
         if (playerInteractor != null)
             playerMovement = playerInteractor.GetComponent<IsoPlayerController2D>();
 
         if (playerMovement == null)
-            playerMovement = FindFirstObjectByType<IsoPlayerController2D>();
+            playerMovement = FindAnyObjectByType<IsoPlayerController2D>();
+    }
+
+    private bool HasMissingReferences()
+    {
+        return targetCanvas == null ||
+               craftingSystem == null ||
+               inventorySystem == null ||
+               playerInteractor == null ||
+               playerMovement == null;
     }
 
     private void TryBindSources()
@@ -366,7 +398,10 @@ public class CraftingUI : MonoBehaviour
 
         ResolveReferences();
         EnsureRuntimeUI();
-        RefreshAll();
+        RebuildRecipeSlots();
+        EnsureSelectedRecipe();
+        RefreshRecipeSlots();
+        RefreshSelectedRecipeDetails();
     }
 
     private void PauseGameplay(bool shouldPause)
@@ -376,7 +411,7 @@ public class CraftingUI : MonoBehaviour
             if (pausedByCrafting)
                 return;
 
-            simpleInventoryUI = FindFirstObjectByType<SimpleInventoryUI>();
+            simpleInventoryUI = FindAnyObjectByType<SimpleInventoryUI>();
             usingSimpleInventoryModal = simpleInventoryUI != null && simpleInventoryUI.TryOpenExternalModal();
 
             if (playerInteractor != null)
@@ -427,7 +462,7 @@ public class CraftingUI : MonoBehaviour
 
     private void EnsureRuntimeUI()
     {
-        if (targetCanvas == null)
+        if (targetCanvas == null || IsRuntimeUIReady())
             return;
 
         bool wasVisible = overlayRoot != null && overlayRoot.activeSelf;
@@ -459,6 +494,29 @@ public class CraftingUI : MonoBehaviour
         if (Application.isPlaying && overlayRoot != null && overlayRoot.activeSelf != wasVisible)
             overlayRoot.SetActive(wasVisible);
 
+    }
+
+    private bool IsRuntimeUIReady()
+    {
+        return overlayRoot != null &&
+               panelRect != null &&
+               titleText != null &&
+               hintText != null &&
+               footerText != null &&
+               recipeScrollRectTransform != null &&
+               recipeScrollRect != null &&
+               recipeViewportRect != null &&
+               recipeContentRoot != null &&
+               recipeSlotTemplate != null &&
+               detailsPanelRect != null &&
+               detailsPanelImage != null &&
+               selectedItemFrameRect != null &&
+               selectedItemFrameImage != null &&
+               selectedItemIcon != null &&
+               selectedItemNameText != null &&
+               selectedItemDescriptionText != null &&
+               selectedItemResourcesTitleText != null &&
+               selectedItemResourcesText != null;
     }
 
     private RectTransform EnsureOverlayRoot()
@@ -776,7 +834,7 @@ public class CraftingUI : MonoBehaviour
             return;
         }
 
-        RebuildRecipeSlots();
+        BuildRecipeSlotsIfNeeded();
         EnsureSelectedRecipe();
         RefreshRecipeSlots();
         RefreshSelectedRecipeDetails();
@@ -971,40 +1029,57 @@ public class CraftingUI : MonoBehaviour
 
         if (slot.OutputIcon != null)
         {
-            slot.OutputIcon.sprite = outputSprite;
-            slot.OutputIcon.enabled = outputSprite != null;
-            slot.OutputIcon.color = craftable ? Color.white : new Color(0.34f, 0.34f, 0.34f, 1f);
+            if (slot.OutputIcon.sprite != outputSprite)
+                slot.OutputIcon.sprite = outputSprite;
+
+            bool shouldShowIcon = outputSprite != null;
+            if (slot.OutputIcon.enabled != shouldShowIcon)
+                slot.OutputIcon.enabled = shouldShowIcon;
+
+            Color iconColor = craftable ? Color.white : new Color(0.34f, 0.34f, 0.34f, 1f);
+            if (slot.OutputIcon.color != iconColor)
+                slot.OutputIcon.color = iconColor;
         }
 
         if (slot.AmountText != null)
         {
-            slot.AmountText.text = recipe.OutputAmount > 1 ? recipe.OutputAmount.ToString() : string.Empty;
-            slot.AmountText.color = craftable
+            SetTextIfChanged(slot.AmountText, recipe.OutputAmount > 1 ? recipe.OutputAmount.ToString() : string.Empty);
+            Color amountColor = craftable
                 ? new Color(0.24f, 0.17f, 0.12f, 1f)
                 : new Color(0.42f, 0.34f, 0.28f, 1f);
+
+            if (slot.AmountText.color != amountColor)
+                slot.AmountText.color = amountColor;
         }
 
         if (slot.IconFrame != null)
         {
-            slot.IconFrame.color = isSelected
+            Color frameColor = isSelected
                 ? new Color(0.88f, 0.764f, 0.49f, 1f)
                 : new Color(0.757f, 0.678f, 0.561f, 0.95f);
+
+            if (slot.IconFrame.color != frameColor)
+                slot.IconFrame.color = frameColor;
         }
 
         if (slot.SlotBackground != null)
         {
+            Color backgroundColor;
             if (isSelected)
             {
-                slot.SlotBackground.color = craftable
+                backgroundColor = craftable
                     ? new Color(0.949f, 0.882f, 0.733f, 1f)
                     : new Color(0.913f, 0.84f, 0.752f, 1f);
             }
             else
             {
-                slot.SlotBackground.color = craftable
+                backgroundColor = craftable
                     ? new Color(0.976f, 0.949f, 0.898f, 1f)
                     : new Color(0.88f, 0.834f, 0.79f, 1f);
             }
+
+            if (slot.SlotBackground.color != backgroundColor)
+                slot.SlotBackground.color = backgroundColor;
         }
     }
 
@@ -1021,11 +1096,13 @@ public class CraftingUI : MonoBehaviour
 
         if (selectedRecipe == null)
         {
-            selectedItemNameText.text = "Nenhuma receita";
-            selectedItemDescriptionText.text = "Adicione receitas ao sistema de crafting para visualizar itens aqui.";
-            selectedItemResourcesTitleText.text = "Recursos necessarios";
-            selectedItemResourcesText.text = "Selecione um item na grade.";
-            selectedItemIcon.enabled = false;
+            SetTextIfChanged(selectedItemNameText, "Nenhuma receita");
+            SetTextIfChanged(selectedItemDescriptionText, "Adicione receitas ao sistema de crafting para visualizar itens aqui.");
+            SetTextIfChanged(selectedItemResourcesTitleText, "Recursos necessarios");
+            SetTextIfChanged(selectedItemResourcesText, "Selecione um item na grade.");
+
+            if (selectedItemIcon.enabled)
+                selectedItemIcon.enabled = false;
 
             if (selectedItemFrameImage != null)
                 selectedItemFrameImage.color = new Color(0.757f, 0.678f, 0.561f, 0.75f);
@@ -1044,14 +1121,21 @@ public class CraftingUI : MonoBehaviour
             ? outputItem.itemName
             : selectedRecipe.DisplayName;
 
-        selectedItemNameText.text = outputName;
-        selectedItemDescriptionText.text = BuildRecipeDescription(selectedRecipe, craftable, reason);
-        selectedItemResourcesTitleText.text = "Recursos necessarios";
-        selectedItemResourcesText.text = BuildResourcesDetailText(selectedRecipe);
+        SetTextIfChanged(selectedItemNameText, outputName);
+        SetTextIfChanged(selectedItemDescriptionText, BuildRecipeDescription(selectedRecipe, craftable, reason));
+        SetTextIfChanged(selectedItemResourcesTitleText, "Recursos necessarios");
+        SetTextIfChanged(selectedItemResourcesText, BuildResourcesDetailText(selectedRecipe));
 
-        selectedItemIcon.sprite = outputSprite;
-        selectedItemIcon.enabled = outputSprite != null;
-        selectedItemIcon.color = craftable ? Color.white : new Color(0.34f, 0.34f, 0.34f, 1f);
+        if (selectedItemIcon.sprite != outputSprite)
+            selectedItemIcon.sprite = outputSprite;
+
+        bool shouldShowSelectedIcon = outputSprite != null;
+        if (selectedItemIcon.enabled != shouldShowSelectedIcon)
+            selectedItemIcon.enabled = shouldShowSelectedIcon;
+
+        Color selectedIconColor = craftable ? Color.white : new Color(0.34f, 0.34f, 0.34f, 1f);
+        if (selectedItemIcon.color != selectedIconColor)
+            selectedItemIcon.color = selectedIconColor;
 
         if (selectedItemFrameImage != null)
         {
@@ -1092,7 +1176,8 @@ public class CraftingUI : MonoBehaviour
         if (ingredients.Length == 0)
             return "Nenhum recurso necessario.";
 
-        StringBuilder builder = new();
+        StringBuilder builder = resourcesTextBuilder;
+        builder.Clear();
 
         for (int i = 0; i < ingredients.Length; i++)
         {
@@ -1185,8 +1270,13 @@ public class CraftingUI : MonoBehaviour
 
     private void SetHint(string text)
     {
-        if (hintText != null)
-            hintText.text = text;
+        SetTextIfChanged(hintText, text);
+    }
+
+    private static void SetTextIfChanged(TMP_Text target, string value)
+    {
+        if (target != null && target.text != value)
+            target.text = value;
     }
 
     private Sprite ResolveRecipeOutputSprite(CraftingRecipeDefinition recipe, Sprite fallbackSprite = null)
@@ -1391,7 +1481,7 @@ public class CraftingUI : MonoBehaviour
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
         scaler.matchWidthOrHeight = 0.5f;
 
-        if (FindFirstObjectByType<EventSystem>() == null)
+        if (FindAnyObjectByType<EventSystem>() == null)
         {
             GameObject eventSystemObject = new("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
             DontDestroyOnLoad(eventSystemObject);

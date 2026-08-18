@@ -89,6 +89,9 @@ public class UIInventoryBar : MonoBehaviour
         if (keyboard == null)
             return;
 
+        if (!keyboard.anyKey.wasPressedThisFrame)
+            return;
+
         int maxRowIndex = GetMaxRowIndex();
         HandleRowNavigationInput(maxRowIndex);
         HandleNumericSelectionInput();
@@ -116,11 +119,15 @@ public class UIInventoryBar : MonoBehaviour
     // API publica para alimentar a barra e navegar entre linhas.
     public void SetInventory(IReadOnlyList<InventorySlotData> items)
     {
+        SetInventoryReference(items);
+        RefreshVisibleRow();
+    }
+
+    private void SetInventoryReference(IReadOnlyList<InventorySlotData> items)
+    {
         // A hotbar so aponta para o inventario atual. Assim a gente evita copiar tudo a cada refresh.
         inventory = items ?? Array.Empty<InventorySlotData>();
-
         RebuildSlotsIfNeeded();
-        RefreshVisibleRow();
     }
 
     public void NextRow(bool triggerFeedback = false)
@@ -150,7 +157,8 @@ public class UIInventoryBar : MonoBehaviour
     // Sincronizacao com o InventorySystem.
     private void HandleInventoryChanged(IReadOnlyList<InventorySlotData> _)
     {
-        SetInventory(inventorySystem != null ? inventorySystem.Slots : null);
+        // InventorySystem sempre notifica a selecao logo depois; o refresh visual acontece uma vez la.
+        SetInventoryReference(inventorySystem != null ? inventorySystem.Slots : null);
     }
 
     private void HandleSelectionChanged(int slotIndex, InventorySlotData _)
@@ -170,7 +178,7 @@ public class UIInventoryBar : MonoBehaviour
         if (inventorySystem == null)
             return;
 
-        SetInventory(inventorySystem.Slots);
+        SetInventoryReference(inventorySystem.Slots);
         HandleSelectionChanged(inventorySystem.SelectedSlotIndex, inventorySystem.SelectedSlot);
     }
 
@@ -517,7 +525,7 @@ public class UIInventoryBar : MonoBehaviour
     private void ResolveInventorySystem()
     {
         if (inventorySystem == null)
-            inventorySystem = FindFirstObjectByType<InventorySystem>();
+            inventorySystem = FindAnyObjectByType<InventorySystem>();
     }
 
     private int ResolveNumericSelectionInput()

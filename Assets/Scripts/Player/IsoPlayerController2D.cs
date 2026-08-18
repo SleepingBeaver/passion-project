@@ -34,6 +34,7 @@ public class IsoPlayerController2D : MonoBehaviour
 
     private bool sprintHeld;
     private bool isMoving;
+    private bool inputDirty = true;
     private bool hasIsSprintingParam;
     private bool hasCachedSprintValue;
 
@@ -83,19 +84,30 @@ public class IsoPlayerController2D : MonoBehaviour
     public void OnMove(InputValue value)
     {
         inputRaw = value.Get<Vector2>();
+        inputDirty = true;
     }
 
     // Atualizacao de input, direcao e animacao.
     private void Update()
     {
-        sprintHeld = sprintAction != null && sprintAction.IsPressed();
+        bool inputChanged = inputDirty;
+        bool newSprintHeld = sprintAction != null && sprintAction.IsPressed();
+        bool sprintChanged = newSprintHeld != sprintHeld;
+        sprintHeld = newSprintHeld;
 
-        animDir = ResolveAnimationDirection(inputRaw);
-        isMoving = animDir != Vector2.zero;
-        moveDir = ResolveMovementDirection(animDir);
-        UpdateAnimatorState();
+        if (inputDirty)
+        {
+            animDir = ResolveAnimationDirection(inputRaw);
+            isMoving = animDir != Vector2.zero;
+            moveDir = ResolveMovementDirection(animDir);
+            inputDirty = false;
+        }
 
-        UpdateLastMove();
+        if (inputChanged || sprintChanged)
+            UpdateAnimatorState();
+
+        if (inputChanged || pendingCardinal != Vector2.zero)
+            UpdateLastMove();
     }
 
     // Aplicacao final do deslocamento no Rigidbody.
