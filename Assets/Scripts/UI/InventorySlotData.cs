@@ -13,6 +13,12 @@ public class InventorySlotData
     // Mutacoes basicas do slot.
     public void SetItem(ItemData newItem, int newAmount)
     {
+        if (newItem == null || newAmount <= 0)
+        {
+            Clear();
+            return;
+        }
+
         item = newItem;
         amount = newAmount;
     }

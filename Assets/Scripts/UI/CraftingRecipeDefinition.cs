@@ -4,6 +4,7 @@ using UnityEngine;
 [Serializable]
 public sealed class CraftingIngredientRequirement
 {
+    // Unidade minima de entrada de uma receita: item e quantidade normalizada.
     [SerializeField] private ItemData item;
     [SerializeField, Min(1)] private int amount = 1;
 
@@ -25,6 +26,7 @@ public sealed class CraftingIngredientRequirement
 [Serializable]
 public sealed class CraftingRecipeDefinition
 {
+    // Dados serializados apresentados pela UI e executados pelo CraftingSystem.
     [SerializeField] private string recipeId = "recipe";
     [SerializeField] private string displayName;
     [SerializeField, TextArea(2, 4)] private string description;
@@ -32,6 +34,7 @@ public sealed class CraftingRecipeDefinition
     [SerializeField, Min(1)] private int outputAmount = 1;
     [SerializeField] private CraftingIngredientRequirement[] ingredients = Array.Empty<CraftingIngredientRequirement>();
 
+    // Propriedades preservam encapsulamento sem impedir a montagem de receitas em runtime.
     public string RecipeId
     {
         get => recipeId;
@@ -76,6 +79,7 @@ public sealed class CraftingRecipeDefinition
         set => ingredients = value ?? Array.Empty<CraftingIngredientRequirement>();
     }
 
+    // Uma receita so e executavel quando possui saida e todos os ingredientes validos.
     public bool IsValid
     {
         get

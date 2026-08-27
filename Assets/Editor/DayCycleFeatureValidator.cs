@@ -5,9 +5,11 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.UI;
 
 public static class DayCycleFeatureValidator
 {
+    // Cena autoritativa e snapshot minimo para comparar avancos do calendario.
     private const string DevelopmentScenePath = "Assets/Scenes/SampleScene.unity";
 
     private readonly struct CalendarStamp : IEquatable<CalendarStamp>
@@ -53,6 +55,7 @@ public static class DayCycleFeatureValidator
         }
     }
 
+    // Entradas manual e de linha de comando compartilham exatamente a mesma validacao.
     [MenuItem("Tools/Day Cycle/Validate Feature", priority = 120)]
     private static void ValidateFromMenu()
     {
@@ -83,6 +86,7 @@ public static class DayCycleFeatureValidator
         return failures;
     }
 
+    // Verificacao estrutural das referencias e objetos presentes na cena.
     private static void ValidateSceneConfiguration(ref int failures)
     {
         WorldInfoSystem[] clocks = UnityEngine.Object.FindObjectsByType<WorldInfoSystem>(FindObjectsInactive.Include);
@@ -105,6 +109,30 @@ public static class DayCycleFeatureValidator
                 "Gameplay day controller extends the authoritative clock object.", ref failures);
             Check(lightingControllers[0].gameObject == clocks[0].gameObject,
                 "Lighting controller is driven from the authoritative clock object.", ref failures);
+
+            SerializedObject dayCycleObject = new(dayCycles[0]);
+            CanvasGroup fadeGroup = dayCycleObject.FindProperty("transitionFadeCanvasGroup")?.objectReferenceValue
+                as CanvasGroup;
+            Check(fadeGroup != null,
+                "Day transition controller has a full-screen fade layer assigned.", ref failures);
+
+            if (fadeGroup != null)
+            {
+                Canvas fadeCanvas = fadeGroup.GetComponent<Canvas>();
+                Image fadeImage = fadeGroup.GetComponentInChildren<Image>(true);
+
+                Check(!fadeGroup.gameObject.activeSelf && Approximately(fadeGroup.alpha, 0f),
+                    "Day transition fade starts hidden.", ref failures);
+                Check(fadeCanvas != null && fadeCanvas.renderMode == RenderMode.ScreenSpaceOverlay &&
+                      fadeCanvas.sortingOrder == short.MaxValue,
+                    "Day transition fade renders above the complete game UI.", ref failures);
+                Check(fadeImage != null && fadeImage.color.maxColorComponent <= 1f &&
+                      Approximately(fadeImage.color.r, 0f) &&
+                      Approximately(fadeImage.color.g, 0f) &&
+                      Approximately(fadeImage.color.b, 0f) &&
+                      Approximately(fadeImage.color.a, 1f),
+                    "Day transition overlay is opaque black at full alpha.", ref failures);
+            }
         }
 
         InventoryDebugInput debugInput = UnityEngine.Object.FindAnyObjectByType<InventoryDebugInput>(FindObjectsInactive.Include);
@@ -128,6 +156,7 @@ public static class DayCycleFeatureValidator
         }
     }
 
+    // Cenarios funcionais isolados em objetos temporarios, sem salvar alteracoes na cena.
     private static void ValidateFunctionalScenarios(ref int failures)
     {
         GameObject testObject = new("DayCycleValidation_Temporary");
@@ -288,6 +317,7 @@ public static class DayCycleFeatureValidator
             "00:30 lighting uses the deeper late-night phase.", ref failures);
     }
 
+    // Fixtures e utilitarios deterministas usados pelas assercoes acima.
     private static void SetKnownCalendar(WorldInfoSystem world)
     {
         SerializedObject serializedWorld = new(world);

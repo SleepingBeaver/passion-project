@@ -238,7 +238,11 @@ public class WorldInfoSystem : MonoBehaviour
 
     public void SetMoney(int value)
     {
-        money = Mathf.Clamp(value, 0, MaxMoney);
+        int sanitizedValue = Mathf.Clamp(value, 0, MaxMoney);
+        if (money == sanitizedValue)
+            return;
+
+        money = sanitizedValue;
         NotifyInfoChanged();
     }
 
@@ -247,7 +251,9 @@ public class WorldInfoSystem : MonoBehaviour
         if (amount == 0)
             return;
 
-        SetMoney(money + amount);
+        // Soma em 64 bits para que entradas extremas nao estourem o int antes do clamp.
+        long updatedMoney = (long)money + amount;
+        SetMoney((int)Math.Clamp(updatedMoney, 0L, MaxMoney));
     }
 
     public bool TrySpendMoney(int amount)
@@ -264,6 +270,9 @@ public class WorldInfoSystem : MonoBehaviour
 
     public void SetWeather(WeatherType weatherType)
     {
+        if (currentWeather == weatherType)
+            return;
+
         currentWeather = weatherType;
         NotifyInfoChanged();
     }

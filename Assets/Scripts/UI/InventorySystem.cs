@@ -133,7 +133,26 @@ public class InventorySystem : MonoBehaviour
 
     public bool HasItem(ItemData itemData, int minimumAmount = 1)
     {
-        return CountItem(itemData) >= Mathf.Max(1, minimumAmount);
+        if (itemData == null)
+            return false;
+
+        int requiredAmount = Mathf.Max(1, minimumAmount);
+        int accumulatedAmount = 0;
+
+        // Encerra assim que a quantidade pedida for atingida; chamadas de gameplay
+        // nao precisam varrer o restante do inventario para responder apenas sim/nao.
+        for (int i = 0; i < slots.Count; i++)
+        {
+            InventorySlotData slot = slots[i];
+            if (slot.IsEmpty || slot.item != itemData)
+                continue;
+
+            accumulatedAmount += slot.amount;
+            if (accumulatedAmount >= requiredAmount)
+                return true;
+        }
+
+        return false;
     }
 
     public bool IsSelectedItem(ItemData itemData)
@@ -236,7 +255,7 @@ public class InventorySystem : MonoBehaviour
     // Atualizacao interna do estado e da UI.
     private void InitializeSlots()
     {
-        int slotCount = inventoryUI != null ? inventoryUI.SlotCount : fallbackSlotCount;
+        int slotCount = Mathf.Max(1, inventoryUI != null ? inventoryUI.SlotCount : fallbackSlotCount);
 
         slots.Clear();
 

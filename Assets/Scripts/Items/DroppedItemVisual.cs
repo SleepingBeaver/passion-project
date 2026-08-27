@@ -16,18 +16,18 @@ public class DroppedItemVisual : MonoBehaviour
     [Header("Visual")]
     [SerializeField] private Transform visualRoot;
     [SerializeField] private SpriteRenderer iconRenderer;
-    [SerializeField] private float scatterDuration = 0.22f;
-    [SerializeField] private float scatterRadiusMin = 0.25f;
-    [SerializeField] private float scatterRadiusMax = 0.65f;
-    [SerializeField] private float arcHeight = 0.18f;
+    [SerializeField, Min(0f)] private float scatterDuration = 0.22f;
+    [SerializeField, Min(0f)] private float scatterRadiusMin = 0.25f;
+    [SerializeField, Min(0f)] private float scatterRadiusMax = 0.65f;
+    [SerializeField, Min(0f)] private float arcHeight = 0.18f;
 
     [Header("Magnet")]
-    [SerializeField] private float magnetDelay = 0.08f;
-    [SerializeField] private float magnetRadius = 1.35f;
-    [SerializeField] private float startMagnetSpeed = 2.5f;
-    [SerializeField] private float maxMagnetSpeed = 8f;
-    [SerializeField] private float magnetAcceleration = 18f;
-    [SerializeField] private float collectDistance = 0.12f;
+    [SerializeField, Min(0f)] private float magnetDelay = 0.08f;
+    [SerializeField, Min(0f)] private float magnetRadius = 1.35f;
+    [SerializeField, Min(0f)] private float startMagnetSpeed = 2.5f;
+    [SerializeField, Min(0f)] private float maxMagnetSpeed = 8f;
+    [SerializeField, Min(0f)] private float magnetAcceleration = 18f;
+    [SerializeField, Min(0f)] private float collectDistance = 0.12f;
 
     [Header("References")]
     [SerializeField] private InventorySystem inventorySystem;
@@ -60,6 +60,7 @@ public class DroppedItemVisual : MonoBehaviour
     // Ciclo de vida.
     private void Awake()
     {
+        SanitizeConfiguration();
         CacheDistanceThresholds();
 
         if (inventorySystem == null)
@@ -73,6 +74,7 @@ public class DroppedItemVisual : MonoBehaviour
 
     private void OnValidate()
     {
+        SanitizeConfiguration();
         CacheDistanceThresholds();
     }
 
@@ -80,6 +82,9 @@ public class DroppedItemVisual : MonoBehaviour
     {
         if (visualRoot != null)
             visualRoot.localPosition = Vector3.zero;
+
+        if (iconRenderer != null)
+            iconRenderer.transform.localScale = Vector3.one;
 
         nextPickupResolveTime = 0f;
     }
@@ -104,7 +109,10 @@ public class DroppedItemVisual : MonoBehaviour
             pickupTargetOverride = newPickupTarget;
 
         if (iconRenderer != null && itemData != null)
+        {
             iconRenderer.sprite = itemData.icon;
+            iconRenderer.transform.localScale = Vector3.one * itemData.worldIconScale;
+        }
 
         ResolvePickupTarget();
         BeginScatter();
@@ -155,10 +163,19 @@ public class DroppedItemVisual : MonoBehaviour
         currentMagnetSpeed = startMagnetSpeed;
         magnetUnlockTime = Time.time + scatterDuration + magnetDelay;
         state = DropState.Scatter;
+
+        if (scatterDuration <= 0f)
+            CompleteScatter();
     }
 
     private void UpdateScatter()
     {
+        if (scatterDuration <= 0f)
+        {
+            CompleteScatter();
+            return;
+        }
+
         scatterTimer += Time.deltaTime;
         float t = Mathf.Clamp01(scatterTimer / scatterDuration);
 
@@ -171,12 +188,17 @@ public class DroppedItemVisual : MonoBehaviour
         }
 
         if (t >= 1f)
-        {
-            if (visualRoot != null)
-                visualRoot.localPosition = Vector3.zero;
+            CompleteScatter();
+    }
 
-            state = DropState.Idle;
-        }
+    private void CompleteScatter()
+    {
+        transform.position = scatterTarget;
+
+        if (visualRoot != null)
+            visualRoot.localPosition = Vector3.zero;
+
+        state = DropState.Idle;
     }
 
     // Fluxo de espera e magnetismo.
@@ -275,5 +297,19 @@ public class DroppedItemVisual : MonoBehaviour
     {
         magnetRadiusSqr = magnetRadius * magnetRadius;
         collectDistanceSqr = collectDistance * collectDistance;
+    }
+
+    private void SanitizeConfiguration()
+    {
+        scatterDuration = Mathf.Max(0f, scatterDuration);
+        scatterRadiusMin = Mathf.Max(0f, scatterRadiusMin);
+        scatterRadiusMax = Mathf.Max(scatterRadiusMin, scatterRadiusMax);
+        arcHeight = Mathf.Max(0f, arcHeight);
+        magnetDelay = Mathf.Max(0f, magnetDelay);
+        magnetRadius = Mathf.Max(0f, magnetRadius);
+        startMagnetSpeed = Mathf.Max(0f, startMagnetSpeed);
+        maxMagnetSpeed = Mathf.Max(startMagnetSpeed, maxMagnetSpeed);
+        magnetAcceleration = Mathf.Max(0f, magnetAcceleration);
+        collectDistance = Mathf.Max(0f, collectDistance);
     }
 }

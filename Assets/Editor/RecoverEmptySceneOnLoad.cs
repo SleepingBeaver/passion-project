@@ -6,14 +6,17 @@ using UnityEngine.SceneManagement;
 [InitializeOnLoad]
 public static class RecoverEmptySceneOnLoad
 {
+    // Executa uma vez por sessao e nunca substitui uma cena modificada pelo usuario.
     private const string DevelopmentScenePath = "Assets/Scenes/SampleScene.unity";
     private const string SessionCheckKey = "PassionProject.RecoverEmptySceneOnLoad.Checked";
 
+    // Inicializacao adiada ate o Editor concluir a restauracao da sessao.
     static RecoverEmptySceneOnLoad()
     {
         EditorApplication.delayCall += RecoverDevelopmentSceneWhenStartupSceneIsEmpty;
     }
 
+    // Comandos manuais para recuperar a cena e as janelas essenciais.
     [MenuItem("Tools/Project Recovery/Open Development Scene", priority = 100)]
     private static void OpenDevelopmentSceneFromMenu()
     {
@@ -40,6 +43,7 @@ public static class RecoverEmptySceneOnLoad
         EditorApplication.Exit(0);
     }
 
+    // Recuperacao conservadora: aceita somente uma cena vazia, limpa e descartavel.
     private static void RecoverDevelopmentSceneWhenStartupSceneIsEmpty()
     {
         if (Application.isBatchMode ||
@@ -70,6 +74,7 @@ public static class RecoverEmptySceneOnLoad
             OpenEditorWindow("Window/General/Hierarchy");
     }
 
+    // Helpers centralizam a abertura da cena e dos paineis do Editor.
     private static bool OpenDevelopmentScene()
     {
         SceneAsset developmentScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(DevelopmentScenePath);

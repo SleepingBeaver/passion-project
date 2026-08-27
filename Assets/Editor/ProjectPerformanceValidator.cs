@@ -9,6 +9,7 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class ProjectPerformanceValidator
 {
+    // Configuracao da amostra e chaves usadas para atravessar a troca Edit/Play Mode.
     private const string DevelopmentScenePath = "Assets/Scenes/SampleScene.unity";
     private const string RequestKey = "PassionProject.Performance.Request";
     private const string StopKey = "PassionProject.Performance.Stop";
@@ -44,12 +45,14 @@ public static class ProjectPerformanceValidator
     private static ItemData exerciseItem;
     private static CraftingUI craftingUI;
 
+    // Retoma automaticamente uma medicao pendente depois do domain reload.
     static ProjectPerformanceValidator()
     {
         if (SessionState.GetBool(RequestKey, false))
             EditorApplication.delayCall += ResumeProfiling;
     }
 
+    // Entrada de CI e preparacao controlada da sessao de profiling.
     public static void ProfilePlayModeCommandLine()
     {
         EditorSceneManager.OpenScene(DevelopmentScenePath, OpenSceneMode.Single);
@@ -130,6 +133,7 @@ public static class ProjectPerformanceValidator
         EditorApplication.isPlaying = false;
     }
 
+    // Carga funcional representativa de inventario, UI e crafting.
     private static void PrepareUiWorkload()
     {
         inventorySystem = UnityEngine.Object.FindAnyObjectByType<InventorySystem>();
@@ -213,6 +217,7 @@ public static class ProjectPerformanceValidator
         return crafted;
     }
 
+    // Captura sem alocacao dos marcadores selecionados do Unity Profiler.
     private static void StartRecorders()
     {
         mainThreadRecorder = ProfilerRecorder.StartNew(ProfilerCategory.Internal, "Main Thread", 1);
@@ -242,6 +247,7 @@ public static class ProjectPerformanceValidator
         return recorder.Valid ? Math.Max(0L, recorder.LastValue) : 0L;
     }
 
+    // Consolidacao do resultado e limpeza garantida dos recorders/estado de sessao.
     private static void SaveResult()
     {
         double averageFrameMilliseconds = sampledFrames > 0

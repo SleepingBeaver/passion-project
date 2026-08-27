@@ -13,6 +13,7 @@ using UnityEditor.SceneManagement;
 [DefaultExecutionOrder(-1000)]
 public class PauseMenuUI : MonoBehaviour
 {
+    // Nomes estaveis da hierarquia gerada e chaves persistidas no PlayerPrefs.
     private const string PauseRootName = "PauseMenuRoot";
     private const string MainPanelName = "PauseMainPanel";
     private const string OptionsPanelName = "PauseOptionsPanel";
@@ -39,6 +40,7 @@ public class PauseMenuUI : MonoBehaviour
 
     private const float VolumeStep = 0.1f;
 
+    // Estados internos de navegacao e idiomas suportados pelo menu.
     private enum MenuPanel
     {
         Main = 0,
@@ -52,6 +54,7 @@ public class PauseMenuUI : MonoBehaviour
         Spanish = 2
     }
 
+    // Dependencias de gameplay e referencias do layout criadas/reutilizadas automaticamente.
     [Header("References")]
     [SerializeField] private Canvas targetCanvas;
     [SerializeField] private PlayerInteractor playerInteractor;
@@ -107,6 +110,7 @@ public class PauseMenuUI : MonoBehaviour
     [SerializeField] private Button backButton;
     [SerializeField] private TextMeshProUGUI backButtonText;
 
+    // Estado de runtime necessario para restaurar pausa, input e configuracoes do usuario.
     private Keyboard keyboard;
     private bool pausedByMenu;
     private bool usingSimpleInventoryModal;
@@ -127,6 +131,7 @@ public class PauseMenuUI : MonoBehaviour
     private bool IsMenuOpen => pauseMenuRoot != null && pauseMenuRoot.activeSelf;
     private bool IsOptionsOpen => optionsPanelRect != null && optionsPanelRect.gameObject.activeSelf;
 
+    // Ciclo de vida e leitura do atalho Esc.
     private void Reset()
     {
         ResolveReferences();
@@ -225,6 +230,7 @@ public class PauseMenuUI : MonoBehaviour
         simpleInventoryUI ??= FindAnyObjectByType<SimpleInventoryUI>();
     }
 
+    // Persistencia e aplicacao das opcoes de video, audio e idioma.
     private void LoadSettings()
     {
         masterVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(MasterVolumePrefKey, AudioListener.volume));
@@ -287,6 +293,7 @@ public class PauseMenuUI : MonoBehaviour
     }
 
     // Fluxo principal de exibicao do menu: root visivel e painel correto selecionado.
+    // Maquina de estados visual dos paineis principal e de opcoes.
     private void OpenMenu(MenuPanel panel, Button defaultSelection)
     {
         PauseGameplay(true);
@@ -382,6 +389,7 @@ public class PauseMenuUI : MonoBehaviour
         SetRootVisibility(false);
     }
 
+    // Coordenacao com outros modais para restaurar exatamente o estado anterior do jogo.
     private void PauseGameplay(bool shouldPause)
     {
         if (shouldPause)
@@ -438,6 +446,7 @@ public class PauseMenuUI : MonoBehaviour
         usingSimpleInventoryModal = false;
     }
 
+    // Binding idempotente e comandos acionados pelos controles do menu.
     private void BindButtonCallbacks()
     {
         BindButton(resumeButton, ResumeGameplay);
@@ -543,6 +552,7 @@ public class PauseMenuUI : MonoBehaviour
 #endif
     }
 
+    // Atualizacao da copia localizada e dos valores atualmente aplicados.
     private void RefreshLocalizedText()
     {
         SetText(mainTitleText, GetMainTitle());
@@ -595,6 +605,7 @@ public class PauseMenuUI : MonoBehaviour
             target.text = value;
     }
 
+    // Catalogo de textos curto mantido junto da UI enquanto nao ha sistema de localizacao externo.
     private string GetMainTitle()
     {
         return currentLanguage switch
@@ -760,6 +771,7 @@ public class PauseMenuUI : MonoBehaviour
         };
     }
 
+    // Montagem idempotente da arvore visual dos dois paineis.
     private void EnsureLayout()
     {
         if (targetCanvas == null)
@@ -820,6 +832,7 @@ public class PauseMenuUI : MonoBehaviour
         backButton = EnsureMenuButton(optionsPanelRect, BackButtonName, new Color(0.27f, 0.34f, 0.46f, 1f), out backButtonText);
     }
 
+    // Fabrica de componentes e utilitarios de layout compartilhados.
     private static GameObject EnsureRootObject(string objectName, Transform parent)
     {
         Transform existing = parent.Find(objectName);
@@ -1158,6 +1171,7 @@ public class PauseMenuUI : MonoBehaviour
     }
 
 #if UNITY_EDITOR
+    // API exclusiva de autoria para visualizar o menu fora do Play Mode.
     public void BuildLayoutForEditorPreview(bool showOptionsPanel)
     {
         PrepareEditorLayout();

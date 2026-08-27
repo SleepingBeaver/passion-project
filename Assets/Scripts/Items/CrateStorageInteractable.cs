@@ -5,11 +5,13 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class CrateStorageInteractable : WorldInteractable
 {
+    // Dimensoes publicas mantem o placement e o prefab dinamico com o mesmo footprint.
     public static readonly Vector2 DefaultColliderSize = new(0.72f, 0.48f);
     public static readonly Vector2 DefaultColliderOffset = new(0f, -0.12f);
 
     private const string DefaultDisplayName = "Caixote";
 
+    // Configuracao de capacidade, aparencia, colisao e drop do caixote.
     [Header("Crate")]
     [SerializeField] private string axeToolId = "axe_tool";
     [SerializeField] private string openPromptText = "E para abrir";
@@ -36,9 +38,11 @@ public class CrateStorageInteractable : WorldInteractable
     [SerializeField] private InventorySystem inventorySystem;
     [SerializeField] private Transform pickupTargetOverride;
 
+    // Estado de armazenamento em memoria; storedItemAmount permite testar IsEmpty em O(1).
     private readonly List<InventorySlotData> slots = new();
     private int storedItemAmount;
 
+    // API observavel consumida pela CrateStorageUI.
     public event Action StorageChanged;
 
     public IReadOnlyList<InventorySlotData> Slots => slots;
@@ -49,6 +53,7 @@ public class CrateStorageInteractable : WorldInteractable
         ? crateItemData.itemName
         : DefaultDisplayName;
 
+    // Ciclo de vida e montagem dos componentes criados em runtime.
     private void Awake()
     {
         EnsureComponents();
@@ -62,6 +67,7 @@ public class CrateStorageInteractable : WorldInteractable
         ApplyWorldVisuals();
     }
 
+    // Inicializacao usada pelo sistema de placement para compartilhar dependencias da cena.
     public void Initialize(
         ItemData itemData,
         DroppedItemVisual sharedDropPrefab = null,
@@ -87,6 +93,7 @@ public class CrateStorageInteractable : WorldInteractable
         NotifyStorageChanged();
     }
 
+    // Operacoes de armazenamento; notificam a UI somente quando o estado realmente muda.
     public bool TryGetSlot(int slotIndex, out InventorySlotData slotData)
     {
         if (slotIndex < 0 || slotIndex >= slots.Count)
@@ -210,6 +217,7 @@ public class CrateStorageInteractable : WorldInteractable
         return true;
     }
 
+    // Contrato de interacao: abre normalmente e exige hold com machado quando esta vazio.
     public override bool GetRequiresHold(PlayerInteractor interactor)
     {
         return ShouldBreakCrate(interactor);
@@ -238,6 +246,7 @@ public class CrateStorageInteractable : WorldInteractable
         return storageUI != null && storageUI.Open(this, interactor);
     }
 
+    // Quebra, desativa colisores imediatamente e devolve o item ao mundo.
     private bool BreakCrate()
     {
         if (!IsEmpty)
@@ -276,6 +285,7 @@ public class CrateStorageInteractable : WorldInteractable
         dropInstance.Initialize(crateItemData, 1, inventorySystem, pickupTargetOverride);
     }
 
+    // Montagem visual e fisica compartilhada por Awake, OnValidate e Initialize.
     private void EnsureComponents()
     {
         spriteRenderer ??= GetOrAddComponent<SpriteRenderer>(gameObject);
@@ -340,6 +350,7 @@ public class CrateStorageInteractable : WorldInteractable
             pickupTargetOverride = sharedDropper.PickupTargetOverride;
     }
 
+    // Regras internas de inventario e decisao da interacao contextual.
     private bool HasItem(ItemData itemData)
     {
         if (itemData == null)
@@ -444,6 +455,7 @@ public class CrateStorageInteractable : WorldInteractable
         return changed;
     }
 
+    // Fabrica dos componentes auxiliares do caixote dinamico.
     private BoxCollider2D EnsureInteractionTrigger()
     {
         Transform interactionZone = transform.Find("InteractionZone");

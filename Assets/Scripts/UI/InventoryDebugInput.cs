@@ -7,9 +7,11 @@ public class InventoryDebugInput : MonoBehaviour
     [SerializeField] private InventorySystem inventorySystem;
     [SerializeField] private ItemData woodItem;
     [SerializeField] private ItemData crateItem;
+    [SerializeField] private ItemData tomatoSeedItem;
     [SerializeField] private int addAmountPerPress = 1;
     [SerializeField] private int removeAmountPerPress = 1;
     [SerializeField] private int addCrateAmountPerPress = 1;
+    [SerializeField, Min(1)] private int addTomatoSeedAmountPerPress = 10;
 
     [Header("Day Cycle Debug")]
     [SerializeField] private GameplayDayCycleController gameplayDayCycleController;
@@ -32,6 +34,12 @@ public class InventoryDebugInput : MonoBehaviour
         if (MatchesItemId(crateItem, itemId))
         {
             itemData = crateItem;
+            return true;
+        }
+
+        if (MatchesItemId(tomatoSeedItem, itemId))
+        {
+            itemData = tomatoSeedItem;
             return true;
         }
 
@@ -95,7 +103,28 @@ public class InventoryDebugInput : MonoBehaviour
                 ? $"Adicionado: {addCrateAmountPerPress}x {crateItem.itemName}. Total: {inventorySystem.CountItem(crateItem)}"
                 : $"Inventario cheio. Total atual de {crateItem.itemName}: {inventorySystem.CountItem(crateItem)}");
         }
+
+        if (tomatoSeedItem != null && keyboard.tKey.wasPressedThisFrame)
+            AddTomatoSeedsForDebug();
 #endif
+    }
+
+    public bool AddTomatoSeedsForDebug()
+    {
+        if (inventorySystem == null || tomatoSeedItem == null)
+            return false;
+
+        bool addedAll = inventorySystem.AddItem(tomatoSeedItem, addTomatoSeedAmountPerPress);
+        Debug.Log(addedAll
+            ? $"Debug [T]: {addTomatoSeedAmountPerPress}x {tomatoSeedItem.itemName} adicionadas. Total: {inventorySystem.CountItem(tomatoSeedItem)}"
+            : $"Inventario cheio. Total atual de {tomatoSeedItem.itemName}: {inventorySystem.CountItem(tomatoSeedItem)}");
+        return addedAll;
+    }
+
+    [ContextMenu("Debug/Add Tomato Seeds")]
+    private void AddTomatoSeedsFromContextMenu()
+    {
+        AddTomatoSeedsForDebug();
     }
 
     private static bool MatchesItemId(ItemData itemData, string itemId)

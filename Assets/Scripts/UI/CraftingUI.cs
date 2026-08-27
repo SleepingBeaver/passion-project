@@ -11,6 +11,7 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public class CraftingUI : MonoBehaviour
 {
+    // Nomes estaveis permitem reconstruir ou reaproveitar a mesma hierarquia de UI.
     private const string OverlayRootName = "CraftingOverlay";
     private const string PanelName = "Panel";
     private const string TitleName = "Title";
@@ -36,6 +37,7 @@ public class CraftingUI : MonoBehaviour
     private const string RuntimeCanvasName = "CraftingRuntimeCanvas";
     private const float ReferenceResolveRetryInterval = 0.5f;
 
+    // Binding entre uma receita e os componentes visuais do slot correspondente.
     private sealed class RecipeSlotBinding
     {
         public CraftingRecipeDefinition Recipe;
@@ -48,12 +50,14 @@ public class CraftingUI : MonoBehaviour
         public Sprite CachedOutputSprite;
     }
 
+    // Dependencias de gameplay configuraveis no Inspector.
     [Header("References")]
     [SerializeField] private Canvas targetCanvas;
     [SerializeField] private CraftingSystem craftingSystem;
     [SerializeField] private InventorySystem inventorySystem;
     [SerializeField] private PlayerInteractor playerInteractor;
 
+    // Cache visual e buffer de texto reutilizado durante atualizacoes do inventario.
     private readonly List<RecipeSlotBinding> recipeSlots = new();
     private readonly StringBuilder resourcesTextBuilder = new(192);
 
@@ -78,6 +82,7 @@ public class CraftingUI : MonoBehaviour
     private TextMeshProUGUI selectedItemResourcesText;
     private CraftingRecipeDefinition selectedRecipe;
 
+    // Estado de binding, modal e input mantido enquanto a janela existe.
     private InventorySystem boundInventorySystem;
     private CraftingSystem boundCraftingSystem;
     private SimpleInventoryUI simpleInventoryUI;
@@ -99,6 +104,7 @@ public class CraftingUI : MonoBehaviour
     public static CraftingUI Instance { get; private set; }
     public bool IsOpen => overlayRoot != null && overlayRoot.activeSelf;
 
+    // Ciclo de vida; ExecuteAlways tambem mantem o preview do Editor sincronizado.
     private void Awake()
     {
         Instance = this;
@@ -198,6 +204,7 @@ public class CraftingUI : MonoBehaviour
             Open();
     }
 
+    // Descoberta publica e criacao de fallback para cenas sem UI preconfigurada.
     public static CraftingUI GetOrCreate()
     {
         if (Instance != null)
@@ -259,6 +266,7 @@ public class CraftingUI : MonoBehaviour
         return CreateRuntimeCanvas();
     }
 
+    // Fluxo publico de abertura e fechamento do modal de crafting.
     public bool Open()
     {
         ResolveReferences();
@@ -303,6 +311,7 @@ public class CraftingUI : MonoBehaviour
         return true;
     }
 
+    // Resolucao com retry limitado e assinatura nos eventos de inventario/receitas.
     private void ResolveReferences()
     {
         nextReferenceResolveTime = Time.realtimeSinceStartup + ReferenceResolveRetryInterval;
@@ -404,6 +413,7 @@ public class CraftingUI : MonoBehaviour
         RefreshSelectedRecipeDetails();
     }
 
+    // Coordenacao com o modal de inventario para pausar e restaurar exatamente o estado anterior.
     private void PauseGameplay(bool shouldPause)
     {
         if (shouldPause)
@@ -460,6 +470,7 @@ public class CraftingUI : MonoBehaviour
         usingSimpleInventoryModal = false;
     }
 
+    // Montagem idempotente da arvore visual; componentes existentes sao reaproveitados.
     private void EnsureRuntimeUI()
     {
         if (targetCanvas == null || IsRuntimeUIReady())
@@ -821,6 +832,7 @@ public class CraftingUI : MonoBehaviour
         return text;
     }
 
+    // Sincronizacao orientada a eventos dos slots, selecao e painel de detalhes.
     private void RefreshAll()
     {
         if (recipeContentRoot == null)
@@ -1208,6 +1220,7 @@ public class CraftingUI : MonoBehaviour
         return builder.Length > 0 ? builder.ToString() : "Nenhum recurso necessario.";
     }
 
+    // Primeiro clique seleciona; o segundo confirma a criacao da receita escolhida.
     private void HandleRecipeSlotClicked(CraftingRecipeDefinition recipe)
     {
         if (recipe == null)
@@ -1262,6 +1275,7 @@ public class CraftingUI : MonoBehaviour
         SetHint(resultMessage);
     }
 
+    // Operacoes visuais pequenas evitam escritas repetidas em TMP e GameObjects.
     private void SetVisible(bool visible)
     {
         if (overlayRoot != null && overlayRoot.activeSelf != visible)
@@ -1299,6 +1313,7 @@ public class CraftingUI : MonoBehaviour
         return fallbackSprite;
     }
 
+    // Fabrica e migracao dos elementos de UI compartilhados pela montagem automatica.
     private void RemoveLegacyChild(RectTransform parent, string childName)
     {
         if (parent == null)
@@ -1464,6 +1479,7 @@ public class CraftingUI : MonoBehaviour
         return component;
     }
 
+    // Ultimo fallback para garantir que o crafting continue acessivel em cenas de teste.
     private static Canvas CreateRuntimeCanvas()
     {
         if (runtimeFallbackCanvas != null)

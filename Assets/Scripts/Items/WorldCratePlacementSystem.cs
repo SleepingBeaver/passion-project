@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 [DisallowMultipleComponent]
 public class WorldCratePlacementSystem : MonoBehaviour
 {
+    // Configuracao do item reconhecido, alcance, colisao e feedback do ghost.
     private const float ReferenceResolveRetryInterval = 0.5f;
 
     [Header("References")]
@@ -28,12 +29,13 @@ public class WorldCratePlacementSystem : MonoBehaviour
     private Transform placementOrigin;
     private SpriteRenderer ghostRenderer;
     private DroppedItemVisual sharedDropPrefab;
-    private readonly Collider2D[] placementOverlapResults = new Collider2D[8];
+    private readonly Collider2D[] placementOverlapResults = new Collider2D[32];
     private ContactFilter2D placementContactFilter;
     private float nextReferenceResolveTime;
     private float maxPlacementDistanceSqr;
     private bool mirrorPlacementSprite;
 
+    // Ciclo de vida, cache de input e assinatura no inventario.
     private void Awake()
     {
         mouse = Mouse.current;
@@ -89,13 +91,13 @@ public class WorldCratePlacementSystem : MonoBehaviour
         if (WasMirrorKeyPressed())
             TogglePlacementMirror();
 
-        Vector3 placementPosition = ResolvePlacementPosition();
-        bool canPlace = CanPlaceAt(placementPosition);
+        Vector3 placementPosition = ResolvePlacementPosition(out Vector3Int placementCell);
+        bool canPlace = CanPlaceAt(selectedItem, placementCell, placementPosition);
 
         ShowGhost(selectedItem.icon, placementPosition, canPlace);
 
         if (canPlace && mouse.leftButton.wasPressedThisFrame)
-            TryPlaceCrate(selectedItem, placementPosition);
+            TryPlaceCrate(selectedItem, placementCell, placementPosition);
     }
 
     // Evita procurar referencias todo frame quando a cena ainda esta terminando de montar.
@@ -105,7 +107,8 @@ public class WorldCratePlacementSystem : MonoBehaviour
             ResolveReferences();
     }
 
-    private bool TryPlaceCrate(ItemData selectedItem, Vector3 placementPosition)
+    // Validacao e commit atomico do placement; o item so e consumido apos a criacao.
+    private bool TryPlaceCrate(ItemData selectedItem, Vector3Int placementCell, Vector3 placementPosition)
     {
         int selectedSlotIndex = inventorySystem.SelectedSlotIndex;
         if (!inventorySystem.RemoveFromSlot(selectedSlotIndex, 1, out ItemData removedItem, out int removedAmount) ||
@@ -118,6 +121,9 @@ public class WorldCratePlacementSystem : MonoBehaviour
 
         GameObject crateObject = new($"{selectedItem.itemName}_World");
         crateObject.transform.position = placementPosition;
+
+        PlaceableItemOccupancy occupancy = crateObject.AddComponent<PlaceableItemOccupancy>();
+        occupancy.Initialize(targetGrid, placementCell, selectedItem.PlacementFootprintSize);
 
         CrateStorageInteractable crate = crateObject.AddComponent<CrateStorageInteractable>();
         crate.Initialize(
@@ -143,7 +149,8 @@ public class WorldCratePlacementSystem : MonoBehaviour
                eventSystem != null && eventSystem.IsPointerOverGameObject();
     }
 
-    private Vector3 ResolvePlacementPosition()
+    // Conversao do ponteiro para o Grid e testes fisicos sem alocacao.
+    private Vector3 ResolvePlacementPosition(out Vector3Int placementCell)
     {
         Vector2 mouseScreenPosition = mouse.position.ReadValue();
         Vector3 worldPosition = worldCamera != null
@@ -153,20 +160,53 @@ public class WorldCratePlacementSystem : MonoBehaviour
         worldPosition.z = 0f;
 
         if (targetGrid == null)
-            return new Vector3(Mathf.Round(worldPosition.x), Mathf.Round(worldPosition.y), 0f);
+        {
+            placementCell = new Vector3Int(
+                Mathf.RoundToInt(worldPosition.x),
+                Mathf.RoundToInt(worldPosition.y),
+                0
+            );
+            return new Vector3(placementCell.x, placementCell.y, 0f);
+        }
 
-        Vector3Int cell = targetGrid.WorldToCell(worldPosition);
-        Vector3 snapped = targetGrid.GetCellCenterWorld(cell);
+        placementCell = targetGrid.WorldToCell(worldPosition);
+        Vector3 snapped = targetGrid.GetCellCenterWorld(placementCell);
         snapped.z = 0f;
         return snapped;
     }
 
-    private bool CanPlaceAt(Vector3 placementPosition)
+    private bool CanPlaceAt(ItemData selectedItem, Vector3Int placementCell, Vector3 placementPosition)
     {
         if (!IsWithinPlacementRange(placementPosition))
             return false;
 
-        Vector2 checkCenter = (Vector2)placementPosition + CrateStorageInteractable.DefaultColliderOffset;
+        Vector2Int footprintSize = selectedItem != null
+            ? selectedItem.PlacementFootprintSize
+            : Vector2Int.one;
+
+        if (!PlaceableItemOccupancy.CanOccupy(targetGrid, placementCell, footprintSize))
+            return false;
+
+        for (int y = 0; y < footprintSize.y; y++)
+        {
+            for (int x = 0; x < footprintSize.x; x++)
+            {
+                Vector3Int cell = placementCell + new Vector3Int(x, y, 0);
+                Vector3 cellCenter = targetGrid != null
+                    ? targetGrid.GetCellCenterWorld(cell)
+                    : placementPosition + new Vector3(x, y, 0f);
+
+                if (HasBlockingCollision(cellCenter))
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    private bool HasBlockingCollision(Vector3 cellCenter)
+    {
+        Vector2 checkCenter = (Vector2)cellCenter + CrateStorageInteractable.DefaultColliderOffset;
         int hitCount = Physics2D.OverlapBox(
             checkCenter,
             CrateStorageInteractable.DefaultColliderSize,
@@ -182,10 +222,16 @@ public class WorldCratePlacementSystem : MonoBehaviour
             if (hit == null || hit.isTrigger)
                 continue;
 
+            PlaceableItemOccupancy placeableOccupancy = hit.GetComponentInParent<PlaceableItemOccupancy>();
+            if (placeableOccupancy != null &&
+                placeableOccupancy.IsRegistered &&
+                placeableOccupancy.TargetGrid == targetGrid)
+                continue;
+
             return false;
         }
 
-        return true;
+        return false;
     }
 
     private bool IsWithinPlacementRange(Vector3 placementPosition)
@@ -198,6 +244,7 @@ public class WorldCratePlacementSystem : MonoBehaviour
         return (target - origin).sqrMagnitude <= maxPlacementDistanceSqr;
     }
 
+    // Resolucao tardia das dependencias compartilhadas da cena.
     private void ResolveReferences()
     {
         // Se a cena ainda estiver montando, basta tentar de novo mais tarde sem ficar vasculhando tudo em loop.
@@ -233,6 +280,7 @@ public class WorldCratePlacementSystem : MonoBehaviour
     {
         return inventorySystem == null ||
                worldCamera == null ||
+               targetGrid == null ||
                eventSystem == null ||
                placementOrigin == null;
     }
@@ -263,6 +311,7 @@ public class WorldCratePlacementSystem : MonoBehaviour
         return sharedDropPrefab;
     }
 
+    // Feedback visual reutilizado enquanto o jogador escolhe a celula.
     private void EnsureGhost()
     {
         if (ghostRenderer != null)
@@ -333,6 +382,7 @@ public static class CrateGameplayBootstrap
     private static ulong installedSceneHandle = ulong.MaxValue;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    // Bootstrap idempotente para instalar o sistema junto ao InventorySystem.
     private static void RegisterSceneCallback()
     {
         installedSceneHandle = ulong.MaxValue;
