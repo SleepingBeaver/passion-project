@@ -12,8 +12,8 @@ PlayerSettings:
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: DefaultCompany
-  productName: PassionProject
+  companyName: Sleeping Beaver
+  productName: A Taste of Home
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -166,7 +166,9 @@ PlayerSettings:
   androidMaxAspectRatio: 2.4
   androidMinAspectRatio: 1
   applicationIdentifier:
-    Standalone: com.DefaultCompany.2D-URP
+    Standalone: com.sleepingbeaver.atasteofhome
+    Android: com.sleepingbeaver.atasteofhome
+    iPhone: com.sleepingbeaver.atasteofhome
   buildNumber:
     Standalone: 0
     VisionOS: 0
@@ -604,14 +606,14 @@ PlayerSettings:
   editorAssembliesCompatibilityLevel: 1
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
-  metroPackageName: PassionProject
+  metroPackageName: ATasteOfHome
   metroPackageVersion: 
   metroCertificatePath: 
   metroCertificatePassword: 
   metroCertificateSubject: 
   metroCertificateIssuer: 
   metroCertificateNotAfter: 0000000000000000
-  metroApplicationDescription: PassionProject
+  metroApplicationDescription: A Taste of Home
   wsaImages: {}
   metroTileShortName: 
   metroTileShowName: 0
@@ -685,7 +687,7 @@ PlayerSettings:
   cloudProjectId: c6e33b03-abee-45ba-89d6-c3aa5538ea7e
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: PassionProject
+  projectName: A Taste of Home
   organizationId: unity_33deb9a7b3818c75b47b
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0

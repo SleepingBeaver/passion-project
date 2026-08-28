@@ -7,6 +7,11 @@ using UnityEngine.Rendering.Universal;
 [RequireComponent(typeof(Light2D))]
 public class TimeOfDayLightingController : MonoBehaviour
 {
+    // Evita escrever no Light2D indefinidamente depois que a suavizacao termina.
+    private const float ColorSettleThresholdSqr = 0.000001f;
+    private const float IntensitySettleThreshold = 0.0001f;
+
+    // Estrutura serializada que descreve um ponto da curva diaria de iluminacao.
     [Serializable]
     public struct LightingKeyframe
     {
@@ -36,8 +41,10 @@ public class TimeOfDayLightingController : MonoBehaviour
     private Color targetColor = Color.white;
     private float targetIntensity = 1f;
 
+    // Referencia publica somente para leitura, usada pelos validadores do Editor.
     public Light2D GlobalLight => globalLight;
 
+    // Ciclo de vida e vinculacao ao relogio autoritativo.
     private void Reset()
     {
         ResolveReferences();
@@ -84,9 +91,21 @@ public class TimeOfDayLightingController : MonoBehaviour
         if (!Application.isPlaying || globalLight == null || smoothingSpeed <= 0f)
             return;
 
+        if (HasSettledOnTarget())
+            return;
+
         float blend = 1f - Mathf.Exp(-smoothingSpeed * Time.deltaTime);
-        globalLight.color = Color.Lerp(globalLight.color, targetColor, blend);
-        globalLight.intensity = Mathf.Lerp(globalLight.intensity, targetIntensity, blend);
+        Color nextColor = Color.Lerp(globalLight.color, targetColor, blend);
+        float nextIntensity = Mathf.Lerp(globalLight.intensity, targetIntensity, blend);
+
+        // Faz o snap final para encerrar o trabalho por frame e eliminar a cauda
+        // assintotica produzida pelo Lerp exponencial.
+        globalLight.color = ColorDistanceSqr(nextColor, targetColor) <= ColorSettleThresholdSqr
+            ? targetColor
+            : nextColor;
+        globalLight.intensity = Mathf.Abs(nextIntensity - targetIntensity) <= IntensitySettleThreshold
+            ? targetIntensity
+            : nextIntensity;
     }
 
     private void HandleTimeChanged(WorldInfoSystem.TimeChange change)
@@ -114,6 +133,7 @@ public class TimeOfDayLightingController : MonoBehaviour
         }
     }
 
+    // Interpolacao circular: o ultimo keyframe se conecta ao primeiro pelo horario 24:00.
     private void EvaluateLighting(float hour, out Color color, out float intensity)
     {
         float sampleHour = Mathf.Repeat(hour, 24f);
@@ -162,6 +182,7 @@ public class TimeOfDayLightingController : MonoBehaviour
         intensity = Mathf.Lerp(previous.intensity, next.intensity, interpolation);
     }
 
+    // Saneamento da curva e configuracao do Global Light 2D.
     private void EnsureValidKeyframes()
     {
         if (lightingKeyframes == null || lightingKeyframes.Length < 2)
@@ -212,6 +233,22 @@ public class TimeOfDayLightingController : MonoBehaviour
         globalLight.targetSortingLayers = allSortingLayerIds;
     }
 
+    private bool HasSettledOnTarget()
+    {
+        return ColorDistanceSqr(globalLight.color, targetColor) <= ColorSettleThresholdSqr &&
+               Mathf.Abs(globalLight.intensity - targetIntensity) <= IntensitySettleThreshold;
+    }
+
+    private static float ColorDistanceSqr(Color left, Color right)
+    {
+        float red = left.r - right.r;
+        float green = left.g - right.g;
+        float blue = left.b - right.b;
+        float alpha = left.a - right.a;
+        return red * red + green * green + blue * blue + alpha * alpha;
+    }
+
+    // Resolucao local de dependencias; nao executa buscas globais por frame.
     private void ResolveReferences()
     {
         if (worldInfoSystem == null)

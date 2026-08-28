@@ -18,4 +18,22 @@ public class ItemData : ScriptableObject
 
     [Header("UI")]
     [Min(0.1f)] public float inventoryIconScale = 1f;
+
+    [Header("World")]
+    [Min(0.01f)] public float worldIconScale = 1f;
+
+    [Header("Placement")]
+    [Tooltip("Quantidade de celulas da grade ocupadas pelo item nos eixos X e Y.")]
+    [SerializeField] private Vector2Int placementFootprintSize = Vector2Int.one;
+
+    public Vector2Int PlacementFootprintSize => new(
+        Mathf.Max(1, placementFootprintSize.x),
+        Mathf.Max(1, placementFootprintSize.y)
+    );
+
+    private void OnValidate()
+    {
+        itemId = itemId?.Trim();
+        placementFootprintSize = PlacementFootprintSize;
+    }
 }

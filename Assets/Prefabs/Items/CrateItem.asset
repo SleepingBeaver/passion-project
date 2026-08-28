@@ -18,3 +18,4 @@ MonoBehaviour:
   maxStack: 20
   isUnique: 0
   inventoryIconScale: 1.12
+  placementFootprintSize: {x: 1, y: 1}

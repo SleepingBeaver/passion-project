@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a48f64e0b8a4bccad5112fbb2aca06b, type: 3}
+  m_Name: GameContentCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::GameContentCatalog
+  items:
+  - {fileID: 11400000, guid: 4cb97bc487ba15747ad6f5e9f107524e, type: 2}
+  - {fileID: 11400000, guid: e0dfb73967ccb464eaacd51660cbe461, type: 2}
+  - {fileID: 11400000, guid: d642ef83d144a944c9977852e65fd7d5, type: 2}
+  - {fileID: 11400000, guid: 24478a7a7df2a4d4d8adb2800afacf23, type: 2}
+  - {fileID: 11400000, guid: 6ea9c0618d8bd6d4cacff1cab20a1bd4, type: 2}
+  - {fileID: 11400000, guid: 3366891a9d0d91842a98b2d68c056f9c, type: 2}
+  - {fileID: 11400000, guid: 54cbefb2172cf454fb729ec5ad8f4219, type: 2}
+  - {fileID: 11400000, guid: c2a11e490e5c71047af85a6f829ee220, type: 2}
+  - {fileID: 11400000, guid: 75a3163946914d17b9ce4f731d2b871f, type: 2}
+  crops:
+  - {fileID: 11400000, guid: 7e3dcbb18c294ed6aee4ca3d998dbdd4, type: 2}
+  dishes:
+  - {fileID: 11400000, guid: 65083c7d03cc4760afcc4c5e65888e65, type: 2}

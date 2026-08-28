@@ -7,9 +7,13 @@ public class InventoryDebugInput : MonoBehaviour
     [SerializeField] private InventorySystem inventorySystem;
     [SerializeField] private ItemData woodItem;
     [SerializeField] private ItemData crateItem;
+    [SerializeField] private ItemData tomatoSeedItem;
+    [SerializeField] private ItemData tomatoItem;
     [SerializeField] private int addAmountPerPress = 1;
     [SerializeField] private int removeAmountPerPress = 1;
     [SerializeField] private int addCrateAmountPerPress = 1;
+    [SerializeField, Min(1)] private int addTomatoSeedAmountPerPress = 10;
+    [SerializeField, Min(1)] private int addTomatoAmountPerPress = 5;
 
     [Header("Day Cycle Debug")]
     [SerializeField] private GameplayDayCycleController gameplayDayCycleController;
@@ -35,6 +39,18 @@ public class InventoryDebugInput : MonoBehaviour
             return true;
         }
 
+        if (MatchesItemId(tomatoSeedItem, itemId))
+        {
+            itemData = tomatoSeedItem;
+            return true;
+        }
+
+        if (MatchesItemId(tomatoItem, itemId))
+        {
+            itemData = tomatoItem;
+            return true;
+        }
+
         return false;
     }
 
@@ -46,6 +62,7 @@ public class InventoryDebugInput : MonoBehaviour
 #endif
 
         keyboard = Keyboard.current;
+        ResolveDebugItems();
     }
 
     // Atalhos de teste para povoar e limpar o inventario.
@@ -95,13 +112,63 @@ public class InventoryDebugInput : MonoBehaviour
                 ? $"Adicionado: {addCrateAmountPerPress}x {crateItem.itemName}. Total: {inventorySystem.CountItem(crateItem)}"
                 : $"Inventario cheio. Total atual de {crateItem.itemName}: {inventorySystem.CountItem(crateItem)}");
         }
+
+        if (tomatoSeedItem != null && keyboard.tKey.wasPressedThisFrame)
+            AddTomatoSeedsForDebug();
+
+        if (tomatoItem != null && keyboard.yKey.wasPressedThisFrame)
+            AddTomatoesForDebug();
 #endif
+    }
+
+    public bool AddTomatoSeedsForDebug()
+    {
+        if (inventorySystem == null || tomatoSeedItem == null)
+            return false;
+
+        bool addedAll = inventorySystem.AddItem(tomatoSeedItem, addTomatoSeedAmountPerPress);
+        Debug.Log(addedAll
+            ? $"Debug [T]: {addTomatoSeedAmountPerPress}x {tomatoSeedItem.itemName} adicionadas. Total: {inventorySystem.CountItem(tomatoSeedItem)}"
+            : $"Inventario cheio. Total atual de {tomatoSeedItem.itemName}: {inventorySystem.CountItem(tomatoSeedItem)}");
+        return addedAll;
+    }
+
+    [ContextMenu("Debug/Add Tomato Seeds")]
+    private void AddTomatoSeedsFromContextMenu()
+    {
+        AddTomatoSeedsForDebug();
+    }
+
+    public bool AddTomatoesForDebug()
+    {
+        if (inventorySystem == null || tomatoItem == null)
+            return false;
+
+        bool addedAll = inventorySystem.AddItem(tomatoItem, addTomatoAmountPerPress);
+        Debug.Log(addedAll
+            ? $"Debug [Y]: {addTomatoAmountPerPress}x {tomatoItem.itemName} adicionados. Total: {inventorySystem.CountItem(tomatoItem)}"
+            : $"Inventario cheio. Total atual de {tomatoItem.itemName}: {inventorySystem.CountItem(tomatoItem)}");
+        return addedAll;
+    }
+
+    [ContextMenu("Debug/Add Tomatoes")]
+    private void AddTomatoesFromContextMenu()
+    {
+        AddTomatoesForDebug();
+    }
+
+    private void ResolveDebugItems()
+    {
+        if (tomatoItem != null)
+            return;
+
+        GameContentCatalog catalog = GameContentCatalog.LoadDefault();
+        if (catalog != null)
+            catalog.TryGetItem("tomato", out tomatoItem);
     }
 
     private static bool MatchesItemId(ItemData itemData, string itemId)
     {
-        return itemData != null &&
-               !string.IsNullOrWhiteSpace(itemData.itemId) &&
-               string.Equals(itemData.itemId, itemId, System.StringComparison.OrdinalIgnoreCase);
+        return ItemIdentity.Matches(itemData, itemId);
     }
 }

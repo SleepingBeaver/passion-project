@@ -53,6 +53,24 @@ public class IsoPlayerController2D : MonoBehaviour
     private static readonly int LastMoveYHash = Animator.StringToHash("LastMoveY");
     private static readonly int IsSprintingHash = Animator.StringToHash("IsSprinting");
 
+    public Vector2 FacingDirection => lastDir;
+
+    public void RestoreFacingDirection(Vector2 facingDirection)
+    {
+        Vector2 restoredDirection = ResolveAnimationDirection(facingDirection);
+        if (restoredDirection == Vector2.zero)
+            restoredDirection = Vector2.down;
+
+        lastDir = restoredDirection;
+        ClearPending();
+
+        if (animator == null)
+            return;
+
+        SetAnimatorFloatIfChanged(LastMoveXHash, lastDir.x, ref cachedLastMoveX);
+        SetAnimatorFloatIfChanged(LastMoveYHash, lastDir.y, ref cachedLastMoveY);
+    }
+
     // Ciclo de vida.
     private void Awake()
     {

@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 [DisallowMultipleComponent]
 public class CraftingSystem : MonoBehaviour
 {
+    // Dependencias e catalogo de receitas configurados no Inspector.
     [Header("References")]
     [SerializeField] private InventorySystem inventorySystem;
 
@@ -14,11 +15,14 @@ public class CraftingSystem : MonoBehaviour
     [SerializeField] private string defaultWoodItemId = "wood";
     [SerializeField] private string defaultCrateItemId = "crate";
 
+    // Buffers reutilizados evitam alocacoes a cada tentativa de craft.
     private readonly List<SimulatedSlot> simulationSlots = new();
 
+    // API de leitura e notificacao consumida pela CraftingUI.
     public IReadOnlyList<CraftingRecipeDefinition> Recipes => recipes;
     public event Action RecipesChanged;
 
+    // Copia leve de um slot usada para validar a transacao sem alterar o inventario.
     private struct SimulatedSlot
     {
         public ItemData item;
@@ -47,6 +51,7 @@ public class CraftingSystem : MonoBehaviour
 
     private readonly List<ConsumedIngredient> consumedIngredients = new();
 
+    // Ciclo de vida e saneamento das receitas serializadas.
     private void Awake()
     {
         ResolveInventorySystem();
@@ -59,9 +64,11 @@ public class CraftingSystem : MonoBehaviour
         ClampRecipeValues();
     }
 
+    // Transacao de crafting: simula primeiro, agrupa notificacoes e faz rollback em falhas.
     public bool TryCraft(CraftingRecipeDefinition recipe, out string resultMessage)
     {
         resultMessage = string.Empty;
+        ResolveInventorySystem();
 
         if (inventorySystem == null)
         {
@@ -127,6 +134,7 @@ public class CraftingSystem : MonoBehaviour
         }
     }
 
+    // Validacao sem efeitos colaterais usada tanto pelo clique quanto pelo estado visual da UI.
     public bool CanCraft(CraftingRecipeDefinition recipe, out string reason)
     {
         reason = string.Empty;
@@ -185,13 +193,14 @@ public class CraftingSystem : MonoBehaviour
             if (!inventorySystem.TryGetSlot(i, out InventorySlotData slot) || slot == null || slot.IsEmpty)
                 continue;
 
-            if (ItemsMatch(slot.item, itemData))
-                total += slot.amount;
+            if (ItemIdentity.Matches(slot.Item, itemData))
+                total += slot.Amount;
         }
 
         return total;
     }
 
+    // Descoberta de dependencias e receita padrao para cenas ainda sem configuracao explicita.
     private void ResolveInventorySystem()
     {
         if (inventorySystem == null)
@@ -293,6 +302,7 @@ public class CraftingSystem : MonoBehaviour
         return recipe != null && recipe.IsValid;
     }
 
+    // Simulacao de remocao e adicao respeitando as mesmas regras de pilha do inventario real.
     private void BuildSimulationSlots()
     {
         simulationSlots.Clear();
@@ -301,13 +311,16 @@ public class CraftingSystem : MonoBehaviour
             return;
 
         IReadOnlyList<InventorySlotData> inventorySlots = inventorySystem.Slots;
+        if (simulationSlots.Capacity < inventorySlots.Count)
+            simulationSlots.Capacity = inventorySlots.Count;
+
         for (int i = 0; i < inventorySlots.Count; i++)
         {
             InventorySlotData slot = inventorySlots[i];
             simulationSlots.Add(new SimulatedSlot
             {
-                item = slot != null ? slot.item : null,
-                amount = slot != null ? slot.amount : 0
+                item = slot != null ? slot.Item : null,
+                amount = slot != null ? slot.Amount : 0
             });
         }
     }
@@ -390,6 +403,7 @@ public class CraftingSystem : MonoBehaviour
         return remaining == 0;
     }
 
+    // Aplicacao no inventario real; cada ingrediente tambem possui rollback local defensivo.
     private bool TryConsumeIngredientFromInventory(CraftingIngredientRequirement ingredient, out int consumedAmount)
     {
         consumedAmount = 0;
@@ -404,15 +418,15 @@ public class CraftingSystem : MonoBehaviour
             if (!inventorySystem.TryGetSlot(i, out InventorySlotData slot) || slot == null || slot.IsEmpty)
                 continue;
 
-            if (!ItemsMatch(slot.item, ingredient.Item))
+            if (!ItemIdentity.Matches(slot.Item, ingredient.Item))
                 continue;
 
-            int amountToRemove = Mathf.Min(slot.amount, remaining);
+            int amountToRemove = Mathf.Min(slot.Amount, remaining);
             if (amountToRemove <= 0)
                 continue;
 
             if (!inventorySystem.RemoveFromSlot(i, amountToRemove, out ItemData removedItem, out int removedAmount) ||
-                !ItemsMatch(removedItem, ingredient.Item) ||
+                !ItemIdentity.Matches(removedItem, ingredient.Item) ||
                 removedAmount != amountToRemove)
             {
                 if (consumedAmount > 0)
@@ -437,20 +451,13 @@ public class CraftingSystem : MonoBehaviour
 
     private static bool ItemsMatch(ItemData firstItem, ItemData secondItem)
     {
-        if (firstItem == secondItem)
-            return true;
-
-        if (firstItem == null || secondItem == null)
-            return false;
-
-        return !string.IsNullOrWhiteSpace(firstItem.itemId) &&
-               !string.IsNullOrWhiteSpace(secondItem.itemId) &&
-               string.Equals(firstItem.itemId, secondItem.itemId, StringComparison.OrdinalIgnoreCase);
+        return ItemIdentity.Matches(firstItem, secondItem);
     }
 }
 
 public static class CraftingGameplayBootstrap
 {
+    // Bootstrap idempotente para cenas legadas que ainda nao possuem o sistema no Inspector.
     private static ulong installedSceneHandle = ulong.MaxValue;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]

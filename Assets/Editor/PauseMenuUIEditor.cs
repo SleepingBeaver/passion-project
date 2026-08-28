@@ -4,6 +4,7 @@ using UnityEngine;
 [CustomEditor(typeof(PauseMenuUI))]
 public class PauseMenuUIEditor : Editor
 {
+    // Inspector padrao acrescido apenas dos controles de preview do layout.
     public override void OnInspectorGUI()
     {
         serializedObject.Update();
@@ -19,6 +20,7 @@ public class PauseMenuUIEditor : Editor
         serializedObject.ApplyModifiedProperties();
     }
 
+    // Os botoes chamam a mesma API publica usada pela validacao manual da equipe.
     private void DrawPreviewButtons()
     {
         PauseMenuUI pauseMenuUI = (PauseMenuUI)target;

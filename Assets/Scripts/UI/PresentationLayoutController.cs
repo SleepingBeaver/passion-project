@@ -7,9 +7,11 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Canvas))]
 public class PresentationLayoutController : MonoBehaviour
 {
+    // Mantem todo canvas de tela dentro de uma moldura logica 16:9.
     private const string PresentationRootName = "PresentationFrame";
     private static readonly Vector2 DefaultReferenceResolution = new(1920f, 1080f);
 
+    // Resolucao base e referencias preenchidas automaticamente quando ausentes.
     [Header("Reference")]
     [SerializeField] private Vector2 referenceResolution = DefaultReferenceResolution;
 
@@ -19,11 +21,13 @@ public class PresentationLayoutController : MonoBehaviour
     [SerializeField] private Camera targetCamera;
     [SerializeField] private RectTransform presentationRoot;
 
+    // Buffer reutilizado e assinatura da ultima resolucao aplicada.
     private readonly List<Transform> reparentBuffer = new();
     private bool isApplyingLayout;
     private int lastScreenWidth = -1;
     private int lastScreenHeight = -1;
 
+    // Ciclo de vida e deteccao barata de mudancas de resolucao/hierarquia.
     private void Awake()
     {
         ApplyLayout();
@@ -62,6 +66,7 @@ public class PresentationLayoutController : MonoBehaviour
                (targetCamera == null && Camera.main != null);
     }
 
+    // Aplicacao centralizada e protegida contra callbacks reentrantes da hierarquia.
     private void ApplyLayout()
     {
         if (isApplyingLayout)
@@ -91,6 +96,7 @@ public class PresentationLayoutController : MonoBehaviour
         }
     }
 
+    // Resolucao de componentes e criacao da raiz que recebe o conteudo apresentavel.
     private void ResolveReferences()
     {
         targetCanvas ??= GetComponent<Canvas>();
@@ -163,6 +169,7 @@ public class PresentationLayoutController : MonoBehaviour
         return child.name == "CursorVisual";
     }
 
+    // Letterbox/pillarbox: UI e camera compartilham o mesmo aspecto de referencia.
     private void UpdatePresentationRootTransform()
     {
         RectTransform canvasRect = targetCanvas.transform as RectTransform;
@@ -211,6 +218,7 @@ public class PresentationLayoutController : MonoBehaviour
 
 public static class PresentationLayoutBootstrap
 {
+    // Instala o controlador uma unica vez por cena em todos os canvases de tela.
     private static ulong installedSceneHandle = ulong.MaxValue;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]

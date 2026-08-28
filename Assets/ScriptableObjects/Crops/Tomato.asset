@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0c126fc5e384a33835a14c403c49587, type: 3}
+  m_Name: Tomato
+  m_EditorClassIdentifier: Assembly-CSharp::CropDefinition
+  cropId: tomato
+  seedItem: {fileID: 11400000, guid: 3366891a9d0d91842a98b2d68c056f9c, type: 2}
+  harvestItem: {fileID: 11400000, guid: 6ea9c0618d8bd6d4cacff1cab20a1bd4, type: 2}
+  growthSprites:
+  - {fileID: -6432074491910621081, guid: 430ee287d632aae43a7c411c54bb4f14, type: 3}
+  - {fileID: -790969563054653477, guid: 430ee287d632aae43a7c411c54bb4f14, type: 3}
+  - {fileID: -4722324047421131023, guid: 430ee287d632aae43a7c411c54bb4f14, type: 3}
+  - {fileID: -1459723781063171469, guid: 430ee287d632aae43a7c411c54bb4f14, type: 3}
+  - {fileID: -466030798250167349, guid: 430ee287d632aae43a7c411c54bb4f14, type: 3}
+  - {fileID: 1467776606166380917, guid: 430ee287d632aae43a7c411c54bb4f14, type: 3}
+  harvestAmount: 1

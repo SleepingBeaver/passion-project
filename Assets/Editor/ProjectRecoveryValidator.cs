@@ -18,6 +18,7 @@ using UnityEngine.UI;
 [InitializeOnLoad]
 public static class ProjectRecoveryValidator
 {
+    // Cena, limites e estado persistido entre Edit Mode e Play Mode.
     private const string DevelopmentScenePath = "Assets/Scenes/SampleScene.unity";
     private const string UrpAssetPath = "Assets/URP 2D.asset";
     private const string InputActionsPath = "Assets/PlayerInputActions.inputactions";
@@ -43,6 +44,7 @@ public static class ProjectRecoveryValidator
     }
 
     [MenuItem("Tools/Project Recovery/Validate Development Scene", priority = 110)]
+    // Entradas manual e de linha de comando.
     private static void ValidateDevelopmentSceneFromMenu()
     {
         int failures = ValidateEditModeState();
@@ -66,6 +68,7 @@ public static class ProjectRecoveryValidator
         BeginPlayModeValidation();
     }
 
+    // Auditoria estatica de cena, prefabs, materiais e referencias serializadas.
     private static int ValidateEditModeState()
     {
         int failures = 0;
@@ -237,6 +240,7 @@ public static class ProjectRecoveryValidator
         return missingReferences;
     }
 
+    // Sessao de Play Mode com captura de erros e timeout para evitar CI bloqueado.
     private static void BeginPlayModeValidation()
     {
         int editModeFailures = ValidateEditModeState();
@@ -339,6 +343,7 @@ public static class ProjectRecoveryValidator
                DateTime.UtcNow.Ticks > deadline;
     }
 
+    // Finalizacao idempotente, restaurando handlers e estado do Editor.
     private static void FinishPlayModeValidation()
     {
         finishingPlayValidation = true;

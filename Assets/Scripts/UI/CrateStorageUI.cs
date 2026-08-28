@@ -9,6 +9,7 @@ using UnityEngine.EventSystems;
 [DisallowMultipleComponent]
 public class CrateStorageUI : MonoBehaviour
 {
+    // Identificadores estaveis da hierarquia gerada/reaproveitada em runtime.
     private const string OverlayRootName = "CrateStorageOverlay";
     private const string PanelName = "Panel";
     private const string TitlePath = PanelName + "/Title";
@@ -78,6 +79,7 @@ public class CrateStorageUI : MonoBehaviour
     public static CrateStorageUI Instance { get; private set; }
     public bool IsOpen => overlayRoot != null && overlayRoot.activeSelf && activeCrate != null;
 
+    // Ciclo de vida, input e liberacao segura do modal.
     private void Awake()
     {
         Instance = this;
@@ -129,6 +131,7 @@ public class CrateStorageUI : MonoBehaviour
         }
     }
 
+    // Descoberta publica e criacao de fallback para cenas sem a janela configurada.
     public static CrateStorageUI GetOrCreate()
     {
         if (Instance != null)
@@ -188,6 +191,7 @@ public class CrateStorageUI : MonoBehaviour
         return CreateRuntimeCanvas();
     }
 
+    // Abertura, fechamento e binding ao caixote atualmente inspecionado.
     public bool Open(CrateStorageInteractable crate, PlayerInteractor interactor)
     {
         if (crate == null || interactor == null)
@@ -260,6 +264,7 @@ public class CrateStorageUI : MonoBehaviour
         RefreshTitles();
     }
 
+    // Resolucao de dependencias e coordenacao com o estado pausado do gameplay.
     private void ResolveReferences()
     {
         targetCanvas ??= GetComponent<Canvas>();
@@ -356,6 +361,7 @@ public class CrateStorageUI : MonoBehaviour
         usingSimpleInventoryModal = false;
     }
 
+    // Montagem idempotente da janela ou vinculacao ao layout ja presente na cena.
     private void EnsureRuntimeUI()
     {
         if (targetCanvas == null || HasResolvedLayout())
@@ -486,6 +492,7 @@ public class CrateStorageUI : MonoBehaviour
         return canvas;
     }
 
+    // Construcao e atualizacao das duas grades de slots.
     private void RefreshAll()
     {
         RefreshTitles();
@@ -604,6 +611,7 @@ public class CrateStorageUI : MonoBehaviour
         }
     }
 
+    // Clique simples transfere itens rapidamente entre jogador e caixote.
     private void HandlePlayerSlotClicked(int slotIndex)
     {
         if (!IsQuickTransferModifierPressed())
@@ -656,6 +664,7 @@ public class CrateStorageUI : MonoBehaviour
             text.text = value;
     }
 
+    // Utilitarios de fabrica para o layout de fallback.
     private static RectTransform CreateSection(RectTransform parent, string name, Vector2 anchoredPosition, Vector2 size)
     {
         RectTransform sectionRect = CreateUIObject(name, parent);
@@ -740,6 +749,7 @@ public class CrateStorageUI : MonoBehaviour
         rectTransform.localRotation = Quaternion.identity;
     }
 
+    // Arrastar e soltar suporta reordenacao local e transferencia entre as duas areas.
     private void HandlePlayerSlotDragStarted(int slotIndex)
     {
         HandleSlotDragStarted(StorageArea.Player, slotIndex);
@@ -794,6 +804,7 @@ public class CrateStorageUI : MonoBehaviour
             TryTransferCrateSlotToInventory(sourceBinding.Index, showSuccessMessage: false);
     }
 
+    // Transferencias preservam quantidades parciais quando o destino nao comporta a pilha inteira.
     private bool TryTransferPlayerSlotToCrate(int slotIndex, bool showSuccessMessage = true)
     {
         if (inventorySystem == null || activeCrate == null)
@@ -802,8 +813,8 @@ public class CrateStorageUI : MonoBehaviour
         if (!inventorySystem.TryGetSlot(slotIndex, out InventorySlotData slotData) || slotData == null || slotData.IsEmpty)
             return false;
 
-        ItemData itemData = slotData.item;
-        int amount = slotData.amount;
+        ItemData itemData = slotData.Item;
+        int amount = slotData.Amount;
 
         bool addedAll = activeCrate.AddItem(itemData, amount, out int addedAmount);
 
@@ -814,7 +825,7 @@ public class CrateStorageUI : MonoBehaviour
         }
 
         if (!inventorySystem.RemoveFromSlot(slotIndex, addedAmount, out ItemData removedItem, out int removedAmount) ||
-            removedItem != itemData ||
+            !ItemIdentity.Matches(removedItem, itemData) ||
             removedAmount != addedAmount)
         {
             activeCrate.RemoveItem(itemData, addedAmount);
@@ -840,8 +851,8 @@ public class CrateStorageUI : MonoBehaviour
         if (!activeCrate.TryGetSlot(slotIndex, out InventorySlotData slotData) || slotData == null || slotData.IsEmpty)
             return false;
 
-        ItemData itemData = slotData.item;
-        int amount = slotData.amount;
+        ItemData itemData = slotData.Item;
+        int amount = slotData.Amount;
 
         bool addedAll = inventorySystem.AddItem(itemData, amount, out int addedAmount);
 
@@ -852,7 +863,7 @@ public class CrateStorageUI : MonoBehaviour
         }
 
         if (!activeCrate.RemoveFromSlot(slotIndex, addedAmount, out ItemData removedItem, out int removedAmount) ||
-            removedItem != itemData ||
+            !ItemIdentity.Matches(removedItem, itemData) ||
             removedAmount != addedAmount)
         {
             inventorySystem.RemoveItem(itemData, addedAmount);
@@ -888,6 +899,7 @@ public class CrateStorageUI : MonoBehaviour
             : null;
     }
 
+    // Preview de drag reutilizado para nao criar imagens a cada operacao.
     private void ShowDragPreview(InventorySlotVisual sourceSlot)
     {
         if (targetCanvas == null || sourceSlot == null || !sourceSlot.HasItem || sourceSlot.DisplayedIcon == null)

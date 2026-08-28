@@ -51,7 +51,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 32
+  spritePixelsToUnits: 64
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -100,13 +100,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Tilemap1_0
+      name: Soil_1
       rect:
         serializedVersion: 2
         x: 0
-        y: 80
-        width: 32
-        height: 16
+        y: 160
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -122,13 +122,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_1
+      name: Soil_2
       rect:
         serializedVersion: 2
-        x: 32
-        y: 80
-        width: 32
-        height: 16
+        x: 64
+        y: 160
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -144,13 +144,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_2
+      name: Grass
       rect:
         serializedVersion: 2
-        x: 64
-        y: 80
-        width: 32
-        height: 16
+        x: 128
+        y: 160
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -166,13 +166,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_3
+      name: Soil_3
       rect:
         serializedVersion: 2
-        x: 96
-        y: 80
-        width: 32
-        height: 16
+        x: 192
+        y: 160
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -188,13 +188,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_4
+      name: Soil_4
       rect:
         serializedVersion: 2
         x: 0
-        y: 64
-        width: 32
-        height: 16
+        y: 128
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -210,13 +210,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_5
+      name: Soil_5
       rect:
         serializedVersion: 2
-        x: 32
-        y: 64
-        width: 32
-        height: 16
+        x: 64
+        y: 128
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -232,13 +232,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_6
+      name: Soil_6
       rect:
         serializedVersion: 2
-        x: 64
-        y: 64
-        width: 32
-        height: 16
+        x: 128
+        y: 128
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -254,13 +254,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_7
+      name: Soil_7
       rect:
         serializedVersion: 2
-        x: 96
-        y: 64
-        width: 32
-        height: 16
+        x: 192
+        y: 128
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -276,13 +276,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_8
+      name: Soil_8
       rect:
         serializedVersion: 2
         x: 0
-        y: 48
-        width: 32
-        height: 16
+        y: 96
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -298,13 +298,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_9
+      name: Soil_9
       rect:
         serializedVersion: 2
-        x: 32
-        y: 48
-        width: 32
-        height: 16
+        x: 64
+        y: 96
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -320,13 +320,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_10
+      name: Soil_10
       rect:
         serializedVersion: 2
-        x: 64
-        y: 48
-        width: 32
-        height: 16
+        x: 128
+        y: 96
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -342,13 +342,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_11
+      name: Soil_11
       rect:
         serializedVersion: 2
-        x: 96
-        y: 48
-        width: 32
-        height: 16
+        x: 192
+        y: 96
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -364,13 +364,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_12
+      name: Soil_12
       rect:
         serializedVersion: 2
         x: 0
-        y: 32
-        width: 32
-        height: 16
+        y: 64
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -386,13 +386,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_13
+      name: Soil_13
       rect:
         serializedVersion: 2
-        x: 32
-        y: 32
-        width: 32
-        height: 16
+        x: 64
+        y: 64
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -408,13 +408,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_14
+      name: Soil_14
       rect:
         serializedVersion: 2
-        x: 64
-        y: 32
-        width: 32
-        height: 16
+        x: 128
+        y: 64
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -430,13 +430,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_15
+      name: Soil_15
       rect:
         serializedVersion: 2
-        x: 96
-        y: 32
-        width: 32
-        height: 16
+        x: 192
+        y: 64
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -452,13 +452,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_16
+      name: Soil_16
       rect:
         serializedVersion: 2
         x: 0
-        y: 16
-        width: 32
-        height: 16
+        y: 32
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -474,13 +474,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_17
+      name: Soil_17
       rect:
         serializedVersion: 2
-        x: 32
-        y: 16
-        width: 32
-        height: 16
+        x: 64
+        y: 32
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -496,13 +496,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_18
+      name: Soil_18
       rect:
         serializedVersion: 2
-        x: 64
-        y: 16
-        width: 32
-        height: 16
+        x: 128
+        y: 32
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -518,13 +518,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_19
+      name: Soil_19
       rect:
         serializedVersion: 2
-        x: 96
-        y: 16
-        width: 32
-        height: 16
+        x: 192
+        y: 32
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -540,13 +540,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_20
+      name: Soil_20
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 32
-        height: 16
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -562,13 +562,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tilemap1_21
+      name: Soil_21
       rect:
         serializedVersion: 2
-        x: 32
+        x: 64
         y: 0
-        width: 32
-        height: 16
+        width: 64
+        height: 32
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -597,30 +597,30 @@ TextureImporter:
     spriteCustomMetadata:
       entries:
       - key: SpriteEditor.SliceSettings
-        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":32.0,"y":16.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":32.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      Tilemap1_0: -9168573835710782040
-      Tilemap1_1: 319454071
-      Tilemap1_10: 1553749473
-      Tilemap1_11: -717555718
-      Tilemap1_12: 251061287
-      Tilemap1_13: 549566168
-      Tilemap1_14: -916190339
-      Tilemap1_15: -710192235
-      Tilemap1_16: 1933967145
-      Tilemap1_17: -200811613
-      Tilemap1_18: 696142225
-      Tilemap1_19: 855144963
-      Tilemap1_2: 2057374838
-      Tilemap1_20: 621042612
-      Tilemap1_21: 1242710220
-      Tilemap1_3: -832620178
-      Tilemap1_4: 1244942712
-      Tilemap1_5: -1044930176
-      Tilemap1_6: 1440786423
-      Tilemap1_7: 1577457625
-      Tilemap1_8: -1485873425
-      Tilemap1_9: -1045691491
+      Grass: 2057374838
+      Soil_1: -9168573835710782040
+      Soil_10: 1553749473
+      Soil_11: -717555718
+      Soil_12: 251061287
+      Soil_13: 549566168
+      Soil_14: -916190339
+      Soil_15: -710192235
+      Soil_16: 1933967145
+      Soil_17: -200811613
+      Soil_18: 696142225
+      Soil_19: 855144963
+      Soil_2: 319454071
+      Soil_20: 621042612
+      Soil_21: 1242710220
+      Soil_3: -832620178
+      Soil_4: 1244942712
+      Soil_5: -1044930176
+      Soil_6: 1440786423
+      Soil_7: 1577457625
+      Soil_8: -1485873425
+      Soil_9: -1045691491
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

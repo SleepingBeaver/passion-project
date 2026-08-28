@@ -43,7 +43,8 @@ public class ResourceNodeDropper : MonoBehaviour
             return;
         }
 
-        int pieceCount = Mathf.Min(maxVisualDrops, totalDropAmount);
+        // O Mathf.Max protege assets antigos que tenham serializado zero antes do Range.
+        int pieceCount = Mathf.Min(Mathf.Max(1, maxVisualDrops), totalDropAmount);
         int baseAmountPerDrop = totalDropAmount / pieceCount;
         int remainder = totalDropAmount % pieceCount;
 

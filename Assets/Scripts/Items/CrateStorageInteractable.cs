@@ -5,11 +5,13 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class CrateStorageInteractable : WorldInteractable
 {
+    // Dimensoes publicas mantem o placement e o prefab dinamico com o mesmo footprint.
     public static readonly Vector2 DefaultColliderSize = new(0.72f, 0.48f);
     public static readonly Vector2 DefaultColliderOffset = new(0f, -0.12f);
 
     private const string DefaultDisplayName = "Caixote";
 
+    // Configuracao de capacidade, aparencia, colisao e drop do caixote.
     [Header("Crate")]
     [SerializeField] private string axeToolId = "axe_tool";
     [SerializeField] private string openPromptText = "E para abrir";
@@ -36,19 +38,24 @@ public class CrateStorageInteractable : WorldInteractable
     [SerializeField] private InventorySystem inventorySystem;
     [SerializeField] private Transform pickupTargetOverride;
 
+    // Estado de armazenamento em memoria; storedItemAmount permite testar IsEmpty em O(1).
     private readonly List<InventorySlotData> slots = new();
     private int storedItemAmount;
 
+    // API observavel consumida pela CrateStorageUI.
     public event Action StorageChanged;
 
     public IReadOnlyList<InventorySlotData> Slots => slots;
     public int SlotCount => slots.Count;
     public int SlotsPerRow => Mathf.Max(1, slotsPerRow);
     public bool IsEmpty => storedItemAmount <= 0;
+    public ItemData CrateItemData => crateItemData;
+    public bool IsMirrored => mirrorSprite;
     public string DisplayName => crateItemData != null && !string.IsNullOrWhiteSpace(crateItemData.itemName)
         ? crateItemData.itemName
         : DefaultDisplayName;
 
+    // Ciclo de vida e montagem dos componentes criados em runtime.
     private void Awake()
     {
         EnsureComponents();
@@ -62,6 +69,7 @@ public class CrateStorageInteractable : WorldInteractable
         ApplyWorldVisuals();
     }
 
+    // Inicializacao usada pelo sistema de placement para compartilhar dependencias da cena.
     public void Initialize(
         ItemData itemData,
         DroppedItemVisual sharedDropPrefab = null,
@@ -87,6 +95,7 @@ public class CrateStorageInteractable : WorldInteractable
         NotifyStorageChanged();
     }
 
+    // Operacoes de armazenamento; notificam a UI somente quando o estado realmente muda.
     public bool TryGetSlot(int slotIndex, out InventorySlotData slotData)
     {
         if (slotIndex < 0 || slotIndex >= slots.Count)
@@ -109,6 +118,9 @@ public class CrateStorageInteractable : WorldInteractable
         addedAmount = 0;
 
         if (itemData == null || amount <= 0)
+            return false;
+
+        if (CountItem(itemData) < amount)
             return false;
 
         if (itemData.isUnique)
@@ -146,16 +158,12 @@ public class CrateStorageInteractable : WorldInteractable
         {
             InventorySlotData slot = slots[i];
 
-            if (slot.IsEmpty || slot.item != itemData)
+            if (slot.IsEmpty || !ItemIdentity.Matches(slot.Item, itemData))
                 continue;
 
-            int amountToRemove = Mathf.Min(slot.amount, remaining);
-            slot.amount -= amountToRemove;
+            int amountToRemove = slot.RemoveAmount(remaining);
             remaining -= amountToRemove;
             changed = true;
-
-            if (slot.amount <= 0)
-                slot.Clear();
         }
 
         if (changed)
@@ -175,13 +183,9 @@ public class CrateStorageInteractable : WorldInteractable
         if (amount <= 0 || !TryGetSlot(slotIndex, out InventorySlotData slotData) || slotData == null || slotData.IsEmpty)
             return false;
 
-        removedItem = slotData.item;
-        removedAmount = Mathf.Min(amount, slotData.amount);
-        slotData.amount -= removedAmount;
+        removedItem = slotData.Item;
+        removedAmount = slotData.RemoveAmount(amount);
         storedItemAmount = Mathf.Max(0, storedItemAmount - removedAmount);
-
-        if (slotData.amount <= 0)
-            slotData.Clear();
 
         NotifyStorageChanged();
         return removedAmount > 0;
@@ -197,7 +201,7 @@ public class CrateStorageInteractable : WorldInteractable
 
         bool changed = TryMergeSlots(fromSlot, toSlot);
 
-        if (!changed && fromSlot.item != toSlot.item)
+        if (!changed && !ItemIdentity.Matches(fromSlot.Item, toSlot.Item))
         {
             SwapSlotContents(fromSlot, toSlot);
             changed = true;
@@ -210,6 +214,53 @@ public class CrateStorageInteractable : WorldInteractable
         return true;
     }
 
+    public void ClearAllSlots(bool notify = true)
+    {
+        for (int i = 0; i < slots.Count; i++)
+            slots[i].Clear();
+
+        storedItemAmount = 0;
+
+        if (notify)
+            NotifyStorageChanged();
+    }
+
+    public bool SetSlotContents(int slotIndex, ItemData itemData, int amount, bool notify = true)
+    {
+        if (!TryGetSlot(slotIndex, out InventorySlotData slotData) || slotData == null)
+            return false;
+
+        if (itemData == null || amount <= 0)
+        {
+            storedItemAmount -= slotData.Amount;
+            slotData.Clear();
+            storedItemAmount = Mathf.Max(0, storedItemAmount);
+
+            if (notify)
+                NotifyStorageChanged();
+
+            return true;
+        }
+
+        int maxStack = ResolveMaxStackSize(itemData);
+        if (amount > maxStack)
+            return false;
+
+        storedItemAmount = Mathf.Max(0, storedItemAmount - slotData.Amount) + amount;
+        slotData.SetItem(itemData, amount);
+
+        if (notify)
+            NotifyStorageChanged();
+
+        return true;
+    }
+
+    public void NotifyRestoredContents()
+    {
+        NotifyStorageChanged();
+    }
+
+    // Contrato de interacao: abre normalmente e exige hold com machado quando esta vazio.
     public override bool GetRequiresHold(PlayerInteractor interactor)
     {
         return ShouldBreakCrate(interactor);
@@ -238,6 +289,7 @@ public class CrateStorageInteractable : WorldInteractable
         return storageUI != null && storageUI.Open(this, interactor);
     }
 
+    // Quebra, desativa colisores imediatamente e devolve o item ao mundo.
     private bool BreakCrate()
     {
         if (!IsEmpty)
@@ -276,6 +328,7 @@ public class CrateStorageInteractable : WorldInteractable
         dropInstance.Initialize(crateItemData, 1, inventorySystem, pickupTargetOverride);
     }
 
+    // Montagem visual e fisica compartilhada por Awake, OnValidate e Initialize.
     private void EnsureComponents()
     {
         spriteRenderer ??= GetOrAddComponent<SpriteRenderer>(gameObject);
@@ -340,18 +393,26 @@ public class CrateStorageInteractable : WorldInteractable
             pickupTargetOverride = sharedDropper.PickupTargetOverride;
     }
 
-    private bool HasItem(ItemData itemData)
+    // Regras internas de inventario e decisao da interacao contextual.
+    public int CountItem(ItemData itemData)
     {
         if (itemData == null)
-            return false;
+            return 0;
+
+        int total = 0;
 
         for (int i = 0; i < slots.Count; i++)
         {
-            if (!slots[i].IsEmpty && slots[i].item == itemData)
-                return true;
+            if (!slots[i].IsEmpty && ItemIdentity.Matches(slots[i].Item, itemData))
+                total += slots[i].Amount;
         }
 
-        return false;
+        return total;
+    }
+
+    private bool HasItem(ItemData itemData)
+    {
+        return CountItem(itemData) > 0;
     }
 
     private bool ShouldBreakCrate(PlayerInteractor interactor)
@@ -364,33 +425,31 @@ public class CrateStorageInteractable : WorldInteractable
 
     private bool TryMergeSlots(InventorySlotData fromSlot, InventorySlotData toSlot)
     {
-        if (fromSlot == null || toSlot == null || fromSlot.IsEmpty || toSlot.IsEmpty || fromSlot.item != toSlot.item)
+        if (fromSlot == null || toSlot == null || fromSlot.IsEmpty || toSlot.IsEmpty ||
+            !ItemIdentity.Matches(fromSlot.Item, toSlot.Item))
             return false;
 
-        int maxStack = ResolveMaxStackSize(toSlot.item);
-        int spaceLeft = Mathf.Max(0, maxStack - toSlot.amount);
+        int maxStack = ResolveMaxStackSize(toSlot.Item);
+        int spaceLeft = Mathf.Max(0, maxStack - toSlot.Amount);
         if (spaceLeft <= 0)
             return false;
 
-        int amountToTransfer = Mathf.Min(spaceLeft, fromSlot.amount);
+        int amountToTransfer = Mathf.Min(spaceLeft, fromSlot.Amount);
         if (amountToTransfer <= 0)
             return false;
 
-        toSlot.amount += amountToTransfer;
-        fromSlot.amount -= amountToTransfer;
-
-        if (fromSlot.amount <= 0)
-            fromSlot.Clear();
+        toSlot.AddAmount(amountToTransfer);
+        fromSlot.RemoveAmount(amountToTransfer);
 
         return true;
     }
 
     private static void SwapSlotContents(InventorySlotData firstSlot, InventorySlotData secondSlot)
     {
-        ItemData firstItem = firstSlot.item;
-        int firstAmount = firstSlot.amount;
+        ItemData firstItem = firstSlot.Item;
+        int firstAmount = firstSlot.Amount;
 
-        firstSlot.SetItem(secondSlot.item, secondSlot.amount);
+        firstSlot.SetItem(secondSlot.Item, secondSlot.Amount);
         secondSlot.SetItem(firstItem, firstAmount);
     }
 
@@ -408,15 +467,15 @@ public class CrateStorageInteractable : WorldInteractable
         {
             InventorySlotData slot = slots[i];
 
-            if (slot.IsEmpty || slot.item != itemData)
+            if (slot.IsEmpty || !ItemIdentity.Matches(slot.Item, itemData))
                 continue;
 
-            int spaceLeft = maxStack - slot.amount;
+            int spaceLeft = maxStack - slot.Amount;
             if (spaceLeft <= 0)
                 continue;
 
             int amountToAdd = Mathf.Min(spaceLeft, remaining);
-            slot.amount += amountToAdd;
+            slot.AddAmount(amountToAdd);
             remaining -= amountToAdd;
             changed = true;
         }
@@ -444,6 +503,7 @@ public class CrateStorageInteractable : WorldInteractable
         return changed;
     }
 
+    // Fabrica dos componentes auxiliares do caixote dinamico.
     private BoxCollider2D EnsureInteractionTrigger()
     {
         Transform interactionZone = transform.Find("InteractionZone");

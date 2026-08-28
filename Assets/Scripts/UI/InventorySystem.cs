@@ -34,7 +34,7 @@ public class InventorySystem : MonoBehaviour
         get
         {
             InventorySlotData selectedSlot = SelectedSlot;
-            return selectedSlot != null && !selectedSlot.IsEmpty ? selectedSlot.item : null;
+            return selectedSlot != null && !selectedSlot.IsEmpty ? selectedSlot.Item : null;
         }
     }
     public InventorySlotVisual SlotPrefab => inventoryUI != null ? inventoryUI.SlotPrefab : null;
@@ -71,6 +71,9 @@ public class InventorySystem : MonoBehaviour
         if (itemData == null || amount <= 0)
             return false;
 
+        if (CountItem(itemData) < amount)
+            return false;
+
         int remaining = amount;
         bool changed = false;
 
@@ -78,16 +81,12 @@ public class InventorySystem : MonoBehaviour
         {
             InventorySlotData slot = slots[i];
 
-            if (slot.IsEmpty || slot.item != itemData)
+            if (slot.IsEmpty || !ItemIdentity.Matches(slot.Item, itemData))
                 continue;
 
-            int amountToRemove = Mathf.Min(slot.amount, remaining);
-            slot.amount -= amountToRemove;
+            int amountToRemove = slot.RemoveAmount(remaining);
             remaining -= amountToRemove;
             changed = true;
-
-            if (slot.amount <= 0)
-                slot.Clear();
         }
 
         if (changed)
@@ -104,12 +103,8 @@ public class InventorySystem : MonoBehaviour
         if (amount <= 0 || !TryGetSlot(slotIndex, out InventorySlotData slotData) || slotData == null || slotData.IsEmpty)
             return false;
 
-        removedItem = slotData.item;
-        removedAmount = Mathf.Min(amount, slotData.amount);
-        slotData.amount -= removedAmount;
-
-        if (slotData.amount <= 0)
-            slotData.Clear();
+        removedItem = slotData.Item;
+        removedAmount = slotData.RemoveAmount(amount);
 
         RefreshUI();
         return removedAmount > 0;
@@ -124,8 +119,8 @@ public class InventorySystem : MonoBehaviour
 
         for (int i = 0; i < slots.Count; i++)
         {
-            if (!slots[i].IsEmpty && slots[i].item == itemData)
-                total += slots[i].amount;
+            if (!slots[i].IsEmpty && ItemIdentity.Matches(slots[i].Item, itemData))
+                total += slots[i].Amount;
         }
 
         return total;
@@ -133,20 +128,37 @@ public class InventorySystem : MonoBehaviour
 
     public bool HasItem(ItemData itemData, int minimumAmount = 1)
     {
-        return CountItem(itemData) >= Mathf.Max(1, minimumAmount);
+        if (itemData == null)
+            return false;
+
+        int requiredAmount = Mathf.Max(1, minimumAmount);
+        int accumulatedAmount = 0;
+
+        // Encerra assim que a quantidade pedida for atingida; chamadas de gameplay
+        // nao precisam varrer o restante do inventario para responder apenas sim/nao.
+        for (int i = 0; i < slots.Count; i++)
+        {
+            InventorySlotData slot = slots[i];
+            if (slot.IsEmpty || !ItemIdentity.Matches(slot.Item, itemData))
+                continue;
+
+            accumulatedAmount += slot.Amount;
+            if (accumulatedAmount >= requiredAmount)
+                return true;
+        }
+
+        return false;
     }
 
     public bool IsSelectedItem(ItemData itemData)
     {
-        return itemData != null && SelectedItem == itemData;
+        return ItemIdentity.Matches(SelectedItem, itemData);
     }
 
     public bool IsSelectedItemId(string itemId)
     {
         ItemData selectedItem = SelectedItem;
-        return !string.IsNullOrWhiteSpace(itemId) &&
-               selectedItem != null &&
-               string.Equals(selectedItem.itemId, itemId, StringComparison.OrdinalIgnoreCase);
+        return ItemIdentity.Matches(selectedItem, itemId);
     }
 
     public bool SelectSlot(int slotIndex)
@@ -196,7 +208,7 @@ public class InventorySystem : MonoBehaviour
             return false;
 
         bool sourceWasSelected = selectedSlotIndex == fromIndex;
-        bool sameItemStack = !toSlot.IsEmpty && fromSlot.item == toSlot.item;
+        bool sameItemStack = !toSlot.IsEmpty && ItemIdentity.Matches(fromSlot.Item, toSlot.Item);
         bool changed = TryMergeSlots(fromSlot, toSlot);
 
         if (!changed && !sameItemStack)
@@ -233,10 +245,39 @@ public class InventorySystem : MonoBehaviour
         RefreshUIImmediate();
     }
 
+    public void ClearAllSlots()
+    {
+        for (int i = 0; i < slots.Count; i++)
+            slots[i].Clear();
+
+        RefreshUI();
+    }
+
+    public bool SetSlotContents(int slotIndex, ItemData itemData, int amount)
+    {
+        if (!TryGetSlot(slotIndex, out InventorySlotData slotData) || slotData == null)
+            return false;
+
+        if (itemData == null || amount <= 0)
+        {
+            slotData.Clear();
+            RefreshUI();
+            return true;
+        }
+
+        int maxStack = ResolveMaxStackSize(itemData);
+        if (amount > maxStack)
+            return false;
+
+        slotData.SetItem(itemData, amount);
+        RefreshUI();
+        return true;
+    }
+
     // Atualizacao interna do estado e da UI.
     private void InitializeSlots()
     {
-        int slotCount = inventoryUI != null ? inventoryUI.SlotCount : fallbackSlotCount;
+        int slotCount = Mathf.Max(1, inventoryUI != null ? inventoryUI.SlotCount : fallbackSlotCount);
 
         slots.Clear();
 
@@ -334,15 +375,15 @@ public class InventorySystem : MonoBehaviour
         {
             InventorySlotData slot = slots[i];
 
-            if (slot.IsEmpty || slot.item != itemData)
+            if (slot.IsEmpty || !ItemIdentity.Matches(slot.Item, itemData))
                 continue;
 
-            int spaceLeft = maxStack - slot.amount;
+            int spaceLeft = maxStack - slot.Amount;
             if (spaceLeft <= 0)
                 continue;
 
             int amountToAdd = Mathf.Min(spaceLeft, remaining);
-            slot.amount += amountToAdd;
+            slot.AddAmount(amountToAdd);
             remaining -= amountToAdd;
             changed = true;
         }
@@ -376,33 +417,30 @@ public class InventorySystem : MonoBehaviour
         if (fromSlot == null || toSlot == null)
             return false;
 
-        if (fromSlot.IsEmpty || toSlot.IsEmpty || fromSlot.item != toSlot.item)
+        if (fromSlot.IsEmpty || toSlot.IsEmpty || !ItemIdentity.Matches(fromSlot.Item, toSlot.Item))
             return false;
 
-        int maxStack = ResolveMaxStackSize(toSlot.item);
-        int spaceLeft = Mathf.Max(0, maxStack - toSlot.amount);
+        int maxStack = ResolveMaxStackSize(toSlot.Item);
+        int spaceLeft = Mathf.Max(0, maxStack - toSlot.Amount);
         if (spaceLeft <= 0)
             return false;
 
-        int amountToTransfer = Mathf.Min(spaceLeft, fromSlot.amount);
+        int amountToTransfer = Mathf.Min(spaceLeft, fromSlot.Amount);
         if (amountToTransfer <= 0)
             return false;
 
-        toSlot.amount += amountToTransfer;
-        fromSlot.amount -= amountToTransfer;
-
-        if (fromSlot.amount <= 0)
-            fromSlot.Clear();
+        toSlot.AddAmount(amountToTransfer);
+        fromSlot.RemoveAmount(amountToTransfer);
 
         return true;
     }
 
     private void SwapSlotContents(InventorySlotData firstSlot, InventorySlotData secondSlot)
     {
-        ItemData firstItem = firstSlot.item;
-        int firstAmount = firstSlot.amount;
+        ItemData firstItem = firstSlot.Item;
+        int firstAmount = firstSlot.Amount;
 
-        firstSlot.SetItem(secondSlot.item, secondSlot.amount);
+        firstSlot.SetItem(secondSlot.Item, secondSlot.Amount);
         secondSlot.SetItem(firstItem, firstAmount);
     }
 
