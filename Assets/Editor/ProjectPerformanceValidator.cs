@@ -142,10 +142,10 @@ public static class ProjectPerformanceValidator
         if (inventorySystem != null)
         {
             exerciseItem = inventorySystem.Slots
-                .FirstOrDefault(slot => slot != null && !slot.IsEmpty && slot.item != null && !slot.item.isUnique)?.item;
+                .FirstOrDefault(slot => slot != null && !slot.IsEmpty && slot.Item != null && !slot.Item.isUnique)?.Item;
 
             exerciseItem ??= inventorySystem.Slots
-                .FirstOrDefault(slot => slot != null && !slot.IsEmpty)?.item;
+                .FirstOrDefault(slot => slot != null && !slot.IsEmpty)?.Item;
 
             if (exerciseItem == null || exerciseItem.isUnique)
             {

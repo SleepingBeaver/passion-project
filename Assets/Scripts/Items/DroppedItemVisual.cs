@@ -51,6 +51,7 @@ public class DroppedItemVisual : MonoBehaviour
     private float currentMagnetSpeed;
     private float magnetUnlockTime;
     private float nextPickupResolveTime;
+    private float nextInventoryResolveTime;
     private float magnetRadiusSqr;
     private float collectDistanceSqr;
 
@@ -63,13 +64,7 @@ public class DroppedItemVisual : MonoBehaviour
         SanitizeConfiguration();
         CacheDistanceThresholds();
 
-        if (inventorySystem == null)
-            inventorySystem = cachedSharedInventorySystem != null
-                ? cachedSharedInventorySystem
-                : FindAnyObjectByType<InventorySystem>();
-
-        if (inventorySystem != null)
-            cachedSharedInventorySystem = inventorySystem;
+        ResolveInventorySystem();
     }
 
     private void OnValidate()
@@ -128,6 +123,9 @@ public class DroppedItemVisual : MonoBehaviour
 
         if (pickupTarget == null && Time.time >= nextPickupResolveTime)
             ResolvePickupTarget();
+
+        if (inventorySystem == null && Time.time >= nextInventoryResolveTime)
+            ResolveInventorySystem();
 
         switch (state)
         {
@@ -243,9 +241,18 @@ public class DroppedItemVisual : MonoBehaviour
     // Tentativa de coleta e integracao com o inventario.
     private void TryCollect()
     {
-        if (itemData == null || inventorySystem == null)
+        if (itemData == null)
         {
-            Destroy(gameObject);
+            Debug.LogError("DroppedItemVisual nao pode coletar um drop sem ItemData; o objeto foi preservado para diagnostico.", this);
+            enabled = false;
+            return;
+        }
+
+        if (inventorySystem == null)
+        {
+            ResolveInventorySystem();
+            state = DropState.Idle;
+            currentMagnetSpeed = startMagnetSpeed;
             return;
         }
 
@@ -291,6 +298,21 @@ public class DroppedItemVisual : MonoBehaviour
         pickupTarget = anchor != null ? anchor : player.transform;
         cachedSharedPickupTarget = pickupTarget;
         cachedSharedPickupTag = playerTag;
+    }
+
+    private void ResolveInventorySystem()
+    {
+        nextInventoryResolveTime = Time.time + PickupTargetResolveRetryInterval;
+
+        if (inventorySystem == null)
+        {
+            inventorySystem = cachedSharedInventorySystem != null
+                ? cachedSharedInventorySystem
+                : FindAnyObjectByType<InventorySystem>();
+        }
+
+        if (inventorySystem != null)
+            cachedSharedInventorySystem = inventorySystem;
     }
 
     private void CacheDistanceThresholds()

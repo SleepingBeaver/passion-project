@@ -1,0 +1,20 @@
+* text=auto eol=lf
+
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+*.aseprite binary
+*.dll binary
+*.fbx binary
+*.gif binary
+*.jpg binary
+*.jpeg binary
+*.mp3 binary
+*.ogg binary
+*.pdf binary
+*.png binary
+*.psd binary
+*.tga binary
+*.wav binary
+*.zip binary

@@ -34,14 +34,11 @@ public class CropDefinition : ScriptableObject
 
     public bool MatchesSeed(ItemData itemData)
     {
-        if (itemData == null || seedItem == null)
-            return false;
+        return ItemIdentity.Matches(itemData, seedItem);
+    }
 
-        if (itemData == seedItem)
-            return true;
-
-        return !string.IsNullOrWhiteSpace(itemData.itemId) &&
-               !string.IsNullOrWhiteSpace(seedItem.itemId) &&
-               string.Equals(itemData.itemId, seedItem.itemId, StringComparison.OrdinalIgnoreCase);
+    private void OnValidate()
+    {
+        cropId = cropId?.Trim();
     }
 }

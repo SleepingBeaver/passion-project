@@ -7,7 +7,6 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
-[ExecuteAlways]
 [DisallowMultipleComponent]
 public class CraftingUI : MonoBehaviour
 {
@@ -104,7 +103,7 @@ public class CraftingUI : MonoBehaviour
     public static CraftingUI Instance { get; private set; }
     public bool IsOpen => overlayRoot != null && overlayRoot.activeSelf;
 
-    // Ciclo de vida; ExecuteAlways tambem mantem o preview do Editor sincronizado.
+    // Ciclo de vida; a hierarquia e criada em runtime sem alterar a cena durante imports.
     private void Awake()
     {
         Instance = this;
@@ -128,8 +127,6 @@ public class CraftingUI : MonoBehaviour
         if (Application.isPlaying)
             SetVisible(false);
 
-        if (!Application.isPlaying)
-            RefreshAll();
     }
 
     private void OnDisable()
@@ -139,31 +136,6 @@ public class CraftingUI : MonoBehaviour
 
         UnbindSources();
     }
-
-    private void OnValidate()
-    {
-#if UNITY_EDITOR
-        // Scene restoration invokes OnValidate while hierarchy mutations are forbidden.
-        // Defer the editor preview rebuild until Unity reaches a safe editor update.
-        UnityEditor.EditorApplication.delayCall -= RefreshAfterValidation;
-        UnityEditor.EditorApplication.delayCall += RefreshAfterValidation;
-#endif
-    }
-
-#if UNITY_EDITOR
-    private void RefreshAfterValidation()
-    {
-        UnityEditor.EditorApplication.delayCall -= RefreshAfterValidation;
-
-        if (this == null || Application.isPlaying)
-            return;
-
-        keyboard = Keyboard.current;
-        ResolveReferences();
-        EnsureRuntimeUI();
-        RefreshAll();
-    }
-#endif
 
     private void OnDestroy()
     {

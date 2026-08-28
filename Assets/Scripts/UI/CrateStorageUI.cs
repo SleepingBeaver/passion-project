@@ -813,8 +813,8 @@ public class CrateStorageUI : MonoBehaviour
         if (!inventorySystem.TryGetSlot(slotIndex, out InventorySlotData slotData) || slotData == null || slotData.IsEmpty)
             return false;
 
-        ItemData itemData = slotData.item;
-        int amount = slotData.amount;
+        ItemData itemData = slotData.Item;
+        int amount = slotData.Amount;
 
         bool addedAll = activeCrate.AddItem(itemData, amount, out int addedAmount);
 
@@ -825,7 +825,7 @@ public class CrateStorageUI : MonoBehaviour
         }
 
         if (!inventorySystem.RemoveFromSlot(slotIndex, addedAmount, out ItemData removedItem, out int removedAmount) ||
-            removedItem != itemData ||
+            !ItemIdentity.Matches(removedItem, itemData) ||
             removedAmount != addedAmount)
         {
             activeCrate.RemoveItem(itemData, addedAmount);
@@ -851,8 +851,8 @@ public class CrateStorageUI : MonoBehaviour
         if (!activeCrate.TryGetSlot(slotIndex, out InventorySlotData slotData) || slotData == null || slotData.IsEmpty)
             return false;
 
-        ItemData itemData = slotData.item;
-        int amount = slotData.amount;
+        ItemData itemData = slotData.Item;
+        int amount = slotData.Amount;
 
         bool addedAll = inventorySystem.AddItem(itemData, amount, out int addedAmount);
 
@@ -863,7 +863,7 @@ public class CrateStorageUI : MonoBehaviour
         }
 
         if (!activeCrate.RemoveFromSlot(slotIndex, addedAmount, out ItemData removedItem, out int removedAmount) ||
-            removedItem != itemData ||
+            !ItemIdentity.Matches(removedItem, itemData) ||
             removedAmount != addedAmount)
         {
             inventorySystem.RemoveItem(itemData, addedAmount);

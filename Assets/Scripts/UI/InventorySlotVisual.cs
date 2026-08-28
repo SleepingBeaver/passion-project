@@ -107,25 +107,25 @@ public class InventorySlotVisual : MonoBehaviour, IPointerClickHandler, IBeginDr
             return;
         }
 
-        if (displayedItem == slotData.item && displayedAmount == slotData.amount)
+        if (ItemIdentity.Matches(displayedItem, slotData.Item) && displayedAmount == slotData.Amount)
             return;
 
-        displayedItem = slotData.item;
-        displayedAmount = slotData.amount;
+        displayedItem = slotData.Item;
+        displayedAmount = slotData.Amount;
         iconLayoutDirty = true;
 
         if (itemIcon != null)
         {
             itemIcon.enabled = true;
-            itemIcon.sprite = slotData.item.icon;
+            itemIcon.sprite = slotData.Item.icon;
             itemIcon.preserveAspect = true;
             ResizeItemSpriteToCurrentSlot();
         }
 
         if (amountText != null)
         {
-            amountText.gameObject.SetActive(slotData.amount > 1);
-            amountText.text = slotData.amount.ToString();
+            amountText.gameObject.SetActive(slotData.Amount > 1);
+            amountText.text = slotData.Amount.ToString();
         }
     }
 

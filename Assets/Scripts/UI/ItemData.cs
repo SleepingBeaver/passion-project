@@ -33,6 +33,7 @@ public class ItemData : ScriptableObject
 
     private void OnValidate()
     {
+        itemId = itemId?.Trim();
         placementFootprintSize = PlacementFootprintSize;
     }
 }

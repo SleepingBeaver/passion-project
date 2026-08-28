@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b11b027856ff4ec8bea03207b6713cf4, type: 3}
+  m_Name: TomatoSoup
+  m_EditorClassIdentifier: Assembly-CSharp::DishDefinition
+  dishId: tomato_soup
+  displayName: Sopa de tomate caseira
+  description: Uma sopa simples e aconchegante feita com tomates frescos.
+  preparedItem: {fileID: 11400000, guid: 75a3163946914d17b9ce4f731d2b871f, type: 2}
+  ingredients:
+  - item: {fileID: 11400000, guid: 6ea9c0618d8bd6d4cacff1cab20a1bd4, type: 2}
+    amount: 2
+  cookingDurationSeconds: 5
+  sellPrice: 80
+  reputationReward: 5

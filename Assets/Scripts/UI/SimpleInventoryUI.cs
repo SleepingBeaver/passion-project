@@ -45,6 +45,8 @@ public class SimpleInventoryUI : MonoBehaviour
     private bool isGamePausedByInventory;
     private float previousTimeScale = 1f;
     private int modalLockCount;
+    private bool playerMovementStateCaptured;
+    private bool playerMovementWasEnabled;
     private int ignoredInputFrame = -1;
     private Keyboard keyboard;
     private readonly List<HudVisibilityState> hudVisibilityStates = new();
@@ -360,6 +362,7 @@ public class SimpleInventoryUI : MonoBehaviour
         if (modalLockCount > 1)
             return;
 
+        CapturePlayerMovementState();
         SetPlayerMovementEnabled(false);
         SetHudObjectsVisible(false);
         SetGamePaused(true);
@@ -380,9 +383,27 @@ public class SimpleInventoryUI : MonoBehaviour
 
     private void RestoreGameplayStateImmediate()
     {
-        SetPlayerMovementEnabled(true);
+        RestorePlayerMovementState();
         SetHudObjectsVisible(true);
         SetGamePaused(false);
+    }
+
+    private void CapturePlayerMovementState()
+    {
+        if (playerMovementStateCaptured || playerMovementBehaviour == null)
+            return;
+
+        playerMovementWasEnabled = playerMovementBehaviour.enabled;
+        playerMovementStateCaptured = true;
+    }
+
+    private void RestorePlayerMovementState()
+    {
+        if (!playerMovementStateCaptured)
+            return;
+
+        SetPlayerMovementEnabled(playerMovementWasEnabled);
+        playerMovementStateCaptured = false;
     }
 
     // Estrutura interna para lembrar o estado original da HUD.

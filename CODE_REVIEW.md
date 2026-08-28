@@ -24,6 +24,14 @@ Os scripts usam comentarios de **secao** para explicar intencao, invariantes e f
 
 `CraftingSystem` simula remocao e insercao antes de alterar o inventario real. A transacao agrupa notificacoes e possui rollback. `WorldCratePlacementSystem` valida alcance e colisao antes de consumir o item. `CrateStorageInteractable` mantem o conteudo e `CrateStorageUI` transfere pilhas completas ou parciais entre os dois armazenamentos.
 
+### Identidade e persistencia
+
+`ItemIdentity` torna `itemId` a identidade estavel compartilhada por inventario, crafting, ferramentas e armazenamento. `GameContentCatalog` e o catalogo de resolucao usado pelo save; IDs nao podem ser vazios, duplicados ou reaproveitados para outro conteudo. `SaveGameController` grava um envelope versionado com checksum, substituicao atomica e backup. O restore passa pelas APIs publicas de cada dominio em vez de serializar referencias Unity.
+
+### Restaurante e atendimento ativo
+
+`RestaurantServiceSystem` controla horario de abertura, fila de um pedido ativo, prazo, falha, pagamento e reputacao. `KitchenStationInteractable` executa uma transacao atomica de ingredientes, mantem o preparo e entrega o item final ao inventario. `ServingCounterInteractable` consome o prato correto somente quando existe um pedido correspondente. `RestaurantHUD` observa eventos e exibe o estado sem fazer polling de inventario.
+
 ## Mapa dos scripts de runtime
 
 ### Core
@@ -51,6 +59,8 @@ Os scripts usam comentarios de **secao** para explicar intencao, invariantes e f
 | `DroppedItemVisual.cs` | Dispersao, magnetismo, coleta parcial e cache do jogador. | Inventario, alvo de pickup |
 | `WorldCratePlacementSystem.cs` | Ghost, snap no Grid, colisao, espelhamento e criacao de caixotes. | Inventario, camera, Grid |
 | `CrateStorageInteractable.cs` | Slots do caixote, abertura e quebra quando vazio. | `CrateStorageUI`, drops |
+| `PlaceableItemOccupancy.cs` | Registro de footprints ocupados no Grid, sem sobreposicao entre itens colocados. | `Grid` |
+| `ItemIdentity.cs` | Comparacao central de itens por referencia ou `itemId` estavel. | `ItemData` |
 
 ### Jogador
 
@@ -83,6 +93,24 @@ Os scripts usam comentarios de **secao** para explicar intencao, invariantes e f
 | `UIInfoPanel.cs` | Montagem e atualizacao do painel de estacao, dia, hora, clima e dinheiro. | `WorldInfoSystem`, TMP |
 | `PresentationLayoutController.cs` | Moldura 16:9, escala da UI e viewport da camera. | Canvas, camera |
 
+### SaveSystem
+
+| Arquivo | Responsabilidade | Dependencias principais |
+| --- | --- | --- |
+| `GameContentCatalog.cs` | Resolve IDs persistidos para assets de item, cultura e prato. | `Resources`, ScriptableObjects |
+| `SaveGameController.cs` | Captura, valida, grava e restaura o estado jogavel com backup. | Sistemas de gameplay atuais |
+
+### Restaurant
+
+| Arquivo | Responsabilidade | Dependencias principais |
+| --- | --- | --- |
+| `DishDefinition.cs` | Receita, item preparado, duracao e recompensas de um prato. | `ItemData` |
+| `RestaurantServiceSystem.cs` | Pedidos, prazos, horario, dinheiro, reputacao e estatisticas. | Mundo, catalogo |
+| `KitchenStationInteractable.cs` | Consumo atomico, preparo e coleta do prato. | Inventario, prato |
+| `ServingCounterInteractable.cs` | Entrega ativa do pedido correto. | Restaurante, inventario |
+| `RestaurantHUD.cs` | Painel observavel do cliente, pedido, cozinha e progresso. | TMP, uGUI |
+| `RestaurantGameplayBootstrap.cs` | Instala o vertical slice runtime de forma idempotente. | Cena principal |
+
 ## Ferramentas do Editor
 
 | Arquivo | Responsabilidade |
@@ -93,6 +121,7 @@ Os scripts usam comentarios de **secao** para explicar intencao, invariantes e f
 | `ProjectPerformanceValidator.cs` | Mede uma carga controlada de UI/inventario/crafting no Play Mode. |
 | `ProjectRecoveryValidator.cs` | Audita cena, assets, referencias e erros de runtime. |
 | `RecoverEmptySceneOnLoad.cs` | Recupera a cena de desenvolvimento somente quando a sessao abre vazia e limpa. |
+| `Tests/InventoryAndContentTests.cs` | Testa identidade, IDs/catálogo, pratos, serviço, cozinha, encapsulamento e atomicidade de inventários. |
 
 ## Otimizacoes e correcoes desta revisao
 
@@ -105,6 +134,14 @@ Os scripts usam comentarios de **secao** para explicar intencao, invariantes e f
 - A divisao de drops garante ao menos uma peca visual, inclusive para assets antigos com valor serializado invalido.
 - `InventorySlotData.SetItem` normaliza entradas nulas ou nao positivas para um slot realmente vazio.
 - IDs de enxada e regador foram centralizados no farming para evitar divergencia entre teclado e mouse.
+- Remocoes por item agora sao atomicas: quantidade insuficiente nao altera o estado.
+- Slots expoem somente leitura; mutacoes passam por metodos que preservam suas invariantes.
+- Placement de caixote e coleta de drops preservam o item quando dependencias ou criacao falham.
+- `SimpleInventoryUI` restaura o estado anterior do movimento, inclusive quando ele ja estava desativado.
+- `CraftingUI` nao usa mais `ExecuteAlways` nem reconstrucao automatica em `OnValidate`.
+- Farming, inventario, mundo, jogador e caixotes possuem pontos explicitos de captura/restore.
+- O save v2 inclui pedido ativo, reputacao, estatisticas e preparo da cozinha, mantendo leitura de saves v1.
+- O primeiro atendimento ativo usa conteudo orientado a dados e recompensa somente depois da entrega valida.
 
 ## Cuidados para proximas mudancas
 
@@ -113,6 +150,8 @@ Os scripts usam comentarios de **secao** para explicar intencao, invariantes e f
 - Nao altere inventario durante a validacao de uma receita. Use a simulacao e mantenha o rollback do commit.
 - Evite `FindAnyObjectByType`, `Resources.FindObjectsOfTypeAll` e criacao de listas dentro de `Update`. As buscas atuais sao de bootstrap ou possuem retry limitado.
 - Ao adicionar um modal, integre-o ao bloqueio de `SimpleInventoryUI` para nao restaurar `Time.timeScale` ou controles pertencentes a outro menu.
+- Nunca altere `itemId`, `cropId` ou `dishId` de conteúdo publicado sem incrementar a versão e adicionar uma migração de save.
+- Ao adicionar item, cultura ou prato, atualize `Assets/Resources/GameContentCatalog.asset` e rode os testes de catálogo.
 
 ## Validacao recomendada
 
@@ -120,4 +159,5 @@ Os scripts usam comentarios de **secao** para explicar intencao, invariantes e f
 2. Executar `Tools > Project Recovery > Validate Development Scene`.
 3. Executar `Tools > Day Cycle > Validate Feature`.
 4. Executar `Tools > Farming > Validate Feature`.
-5. Em Play Mode, testar inventario, crafting, placement/armazenamento do caixote, farming por teclado e mouse, sono e pause menu.
+5. Rodar os testes de Edit Mode em `Window > General > Test Runner`.
+6. Em Play Mode, testar inventário, farming por teclado e mouse, preparo/entrega do pedido, crafting, placement/armazenamento do caixote, sono, reload do save e pause menu.

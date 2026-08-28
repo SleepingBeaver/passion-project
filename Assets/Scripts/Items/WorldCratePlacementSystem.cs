@@ -110,37 +110,75 @@ public class WorldCratePlacementSystem : MonoBehaviour
     // Validacao e commit atomico do placement; o item so e consumido apos a criacao.
     private bool TryPlaceCrate(ItemData selectedItem, Vector3Int placementCell, Vector3 placementPosition)
     {
-        int selectedSlotIndex = inventorySystem.SelectedSlotIndex;
-        if (!inventorySystem.RemoveFromSlot(selectedSlotIndex, 1, out ItemData removedItem, out int removedAmount) ||
-            removedAmount <= 0 ||
-            removedItem == null)
+        if (inventorySystem == null || selectedItem == null || targetGrid == null)
             return false;
 
-        if (selectedItem != removedItem)
-            selectedItem = removedItem;
+        GameObject crateObject = null;
+        bool itemWasConsumed = false;
 
-        GameObject crateObject = new($"{selectedItem.itemName}_World");
-        crateObject.transform.position = placementPosition;
+        try
+        {
+            crateObject = new GameObject($"{selectedItem.itemName}_World");
+            crateObject.SetActive(false);
+            crateObject.transform.position = placementPosition;
 
-        PlaceableItemOccupancy occupancy = crateObject.AddComponent<PlaceableItemOccupancy>();
-        occupancy.Initialize(targetGrid, placementCell, selectedItem.PlacementFootprintSize);
+            PlaceableItemOccupancy occupancy = crateObject.AddComponent<PlaceableItemOccupancy>();
+            occupancy.Initialize(targetGrid, placementCell, selectedItem.PlacementFootprintSize);
 
-        CrateStorageInteractable crate = crateObject.AddComponent<CrateStorageInteractable>();
-        crate.Initialize(
-            selectedItem,
-            ResolveSharedDropPrefab(),
-            inventorySystem,
-            mirrored: mirrorPlacementSprite
-        );
+            CrateStorageInteractable crate = crateObject.AddComponent<CrateStorageInteractable>();
+            crate.Initialize(
+                selectedItem,
+                ResolveSharedDropPrefab(),
+                inventorySystem,
+                mirrored: mirrorPlacementSprite
+            );
 
-        return true;
+            int selectedSlotIndex = inventorySystem.SelectedSlotIndex;
+            bool removedFromInventory = inventorySystem.RemoveFromSlot(
+                selectedSlotIndex,
+                1,
+                out ItemData removedItem,
+                out int removedAmount);
+            if (!removedFromInventory || removedAmount != 1 || !ItemIdentity.Matches(selectedItem, removedItem))
+            {
+                if (removedAmount > 0 && removedItem != null)
+                    inventorySystem.AddItem(removedItem, removedAmount, out _);
+
+                Destroy(crateObject);
+                return false;
+            }
+
+            itemWasConsumed = true;
+            crateObject.SetActive(true);
+
+            if (occupancy.IsRegistered)
+                return true;
+
+            inventorySystem.AddItem(selectedItem, 1, out _);
+            itemWasConsumed = false;
+            crateObject.SetActive(false);
+            Destroy(crateObject);
+            return false;
+        }
+        catch (Exception exception)
+        {
+            if (itemWasConsumed)
+                inventorySystem.AddItem(selectedItem, 1, out _);
+
+            if (crateObject != null)
+            {
+                crateObject.SetActive(false);
+                Destroy(crateObject);
+            }
+
+            Debug.LogException(exception, this);
+            return false;
+        }
     }
 
     private bool IsSelectedCrateItem(ItemData itemData)
     {
-        return itemData != null &&
-               !string.IsNullOrWhiteSpace(itemData.itemId) &&
-               string.Equals(itemData.itemId, placeableCrateItemId, StringComparison.OrdinalIgnoreCase);
+        return ItemIdentity.Matches(itemData, placeableCrateItemId);
     }
 
     private bool IsPointerInputBlocked()

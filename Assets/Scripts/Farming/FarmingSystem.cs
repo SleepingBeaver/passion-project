@@ -52,6 +52,18 @@ public class FarmingSystem : MonoBehaviour
         public bool IsHarvestReady => Crop != null && GrowthStage >= Crop.MatureStageIndex && HarvestRemaining > 0;
     }
 
+    public readonly struct PersistedPlotSnapshot
+    {
+        public PersistedPlotSnapshot(Vector3Int cell, PlotSnapshot plot)
+        {
+            Cell = cell;
+            Plot = plot;
+        }
+
+        public Vector3Int Cell { get; }
+        public PlotSnapshot Plot { get; }
+    }
+
     private sealed class PlotState
     {
         public bool IsTilled;
@@ -441,6 +453,75 @@ public class FarmingSystem : MonoBehaviour
             plot.Crop,
             plot.GrowthStage,
             plot.HarvestRemaining);
+        return true;
+    }
+
+    public void GetModifiedPlotSnapshots(List<PersistedPlotSnapshot> results)
+    {
+        if (results == null)
+            throw new ArgumentNullException(nameof(results));
+
+        results.Clear();
+        foreach (KeyValuePair<Vector3Int, PlotState> entry in plots)
+        {
+            PlotState plot = entry.Value;
+            results.Add(new PersistedPlotSnapshot(
+                entry.Key,
+                new PlotSnapshot(
+                    plot.IsTilled,
+                    plot.IsWatered,
+                    plot.Crop,
+                    plot.GrowthStage,
+                    plot.HarvestRemaining)));
+        }
+    }
+
+    public void ClearModifiedPlots()
+    {
+        foreach (KeyValuePair<Vector3Int, PlotState> entry in plots)
+        {
+            PlotState plot = entry.Value;
+
+            if (soilTilemap != null && soilCells.Contains(entry.Key))
+            {
+                soilTilemap.SetTileFlags(entry.Key, TileFlags.None);
+                soilTilemap.SetColor(entry.Key, Color.white);
+            }
+
+            if (plot?.CropRenderer != null)
+                DestroyGeneratedResource(plot.CropRenderer.gameObject);
+        }
+
+        plots.Clear();
+        HideTargetOutline();
+    }
+
+    public bool RestorePlot(
+        Vector3Int cell,
+        bool isTilled,
+        bool isWatered,
+        CropDefinition crop,
+        int growthStage,
+        int harvestRemaining)
+    {
+        if (!soilCells.Contains(cell) || (!isTilled && crop != null))
+            return false;
+
+        PlotState plot = GetOrCreatePlot(cell);
+        plot.IsTilled = isTilled;
+        plot.IsWatered = isTilled && isWatered;
+        plot.Crop = crop;
+        plot.GrowthStage = crop != null ? Mathf.Clamp(growthStage, 0, crop.MatureStageIndex) : 0;
+        plot.HarvestRemaining = crop != null ? Mathf.Clamp(harvestRemaining, 0, crop.HarvestAmount) : 0;
+
+        if (plot.IsTilled)
+            ApplySoilFilter(cell, plot);
+
+        if (plot.Crop != null)
+            UpdateCropVisual(cell, plot);
+        else
+            HideCropVisual(plot);
+
         return true;
     }
 

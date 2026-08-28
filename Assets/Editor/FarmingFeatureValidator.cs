@@ -130,9 +130,9 @@ public static class FarmingFeatureValidator
             "Isometric tiles keep 22 references and use 64x32 source rects.", ref failures);
 
         Grid grid = UnityEngine.Object.FindAnyObjectByType<Grid>(FindObjectsInactive.Include);
-        Check(grid != null && grid.cellLayout == GridLayout.CellLayout.Isometric &&
+        Check(grid != null && grid.cellLayout == GridLayout.CellLayout.IsometricZAsY &&
               Approximately(grid.cellSize, new Vector3(1f, 0.5f, 1f)),
-            "Grid remains isometric at 1x0.5 world units after source migration.", ref failures);
+            "Grid remains isometric Z-as-Y at 1x0.5 world units after source migration.", ref failures);
 
         Camera mainCamera = Camera.main;
         Check(mainCamera != null && mainCamera.orthographic && Mathf.Approximately(mainCamera.orthographicSize, 5f),
@@ -243,7 +243,7 @@ public static class FarmingFeatureValidator
         try
         {
             Grid grid = root.AddComponent<Grid>();
-            grid.cellLayout = GridLayout.CellLayout.Isometric;
+            grid.cellLayout = GridLayout.CellLayout.IsometricZAsY;
             grid.cellSize = new Vector3(1f, 0.5f, 1f);
 
             GameObject tilemapObject = new("ValidationSoilTilemap");

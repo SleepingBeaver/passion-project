@@ -193,8 +193,8 @@ public class CraftingSystem : MonoBehaviour
             if (!inventorySystem.TryGetSlot(i, out InventorySlotData slot) || slot == null || slot.IsEmpty)
                 continue;
 
-            if (ItemsMatch(slot.item, itemData))
-                total += slot.amount;
+            if (ItemIdentity.Matches(slot.Item, itemData))
+                total += slot.Amount;
         }
 
         return total;
@@ -319,8 +319,8 @@ public class CraftingSystem : MonoBehaviour
             InventorySlotData slot = inventorySlots[i];
             simulationSlots.Add(new SimulatedSlot
             {
-                item = slot != null ? slot.item : null,
-                amount = slot != null ? slot.amount : 0
+                item = slot != null ? slot.Item : null,
+                amount = slot != null ? slot.Amount : 0
             });
         }
     }
@@ -418,15 +418,15 @@ public class CraftingSystem : MonoBehaviour
             if (!inventorySystem.TryGetSlot(i, out InventorySlotData slot) || slot == null || slot.IsEmpty)
                 continue;
 
-            if (!ItemsMatch(slot.item, ingredient.Item))
+            if (!ItemIdentity.Matches(slot.Item, ingredient.Item))
                 continue;
 
-            int amountToRemove = Mathf.Min(slot.amount, remaining);
+            int amountToRemove = Mathf.Min(slot.Amount, remaining);
             if (amountToRemove <= 0)
                 continue;
 
             if (!inventorySystem.RemoveFromSlot(i, amountToRemove, out ItemData removedItem, out int removedAmount) ||
-                !ItemsMatch(removedItem, ingredient.Item) ||
+                !ItemIdentity.Matches(removedItem, ingredient.Item) ||
                 removedAmount != amountToRemove)
             {
                 if (consumedAmount > 0)
@@ -451,15 +451,7 @@ public class CraftingSystem : MonoBehaviour
 
     private static bool ItemsMatch(ItemData firstItem, ItemData secondItem)
     {
-        if (firstItem == secondItem)
-            return true;
-
-        if (firstItem == null || secondItem == null)
-            return false;
-
-        return !string.IsNullOrWhiteSpace(firstItem.itemId) &&
-               !string.IsNullOrWhiteSpace(secondItem.itemId) &&
-               string.Equals(firstItem.itemId, secondItem.itemId, StringComparison.OrdinalIgnoreCase);
+        return ItemIdentity.Matches(firstItem, secondItem);
     }
 }
 
